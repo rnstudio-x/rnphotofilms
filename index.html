@@ -415,6 +415,276 @@
                         <option value="">Select Service</option>
                         <option value="wedding">Wedding Photography</option>
                         <option value="prewedding">Pre-Wedding Shoot</option>
+                        <option value="events">Event 
+    <!-- Contact Section -->
+    <section id="contact" class="contact">
+        <div class="container">
+            <div class="section-header">
+                <h2 class="section-title">Get in Touch</h2>
+                <p class="section-subtitle">Ready to capture your special moments? Let's talk!</p>
+            </div>
+            <div class="contact-content">
+                <div class="contact-info">
+                    <div class="contact-item">
+                        <div class="contact-icon">📍</div>
+                        <div class="contact-details">
+                            <h4>Location</h4>
+                            <p>Thandla, Madhya Pradesh, India</p>
+                        </div>
+                    </div>
+                    <div class="contact-item">
+                        <div class="contact-icon">📞</div>
+                        <div class="contact-details">
+                            <h4>Phone</h4>
+                            <p>+91 7828720365</p>
+                        </div>
+                    </div>
+                    <div class="contact-item">
+                        <div class="contact-icon">✉️</div>
+                        <div class="contact-details">
+                            <h4>Email</h4>
+                            <p>rnstudio.x@gmail.com</p>
+                        </div>
+                    </div>
+                    <div class="contact-item">
+                        <div class="contact-icon">📸</div>
+                        <div class="contact-details">
+                            <h4>Instagram</h4>
+                            <p>@rn.photo.films</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-brand">
+                    <h3>RN PhotoFilms</h3>
+                    <p>Creating timeless visual stories with passion and precision</p>
+                </div>
+                <div class="footer-links">
+                    <div class="footer-section">
+                        <h4>Quick Links</h4>
+                        <a href="#services">Services</a>
+                        <a href="#gallery">Gallery</a>
+                        <a href="#team">Team</a>
+                        <a href="#contact">Contact</a>
+                    </div>
+                    <div class="footer-section">
+                        <h4>Services</h4>
+                        <a href="#services">Wedding Photography</a>
+                        <a href="#services">Pre-Wedding Shoots</a>
+                        <a href="#services">Event Photography</a>
+                        <a href="#services">Portraits</a>
+                    </div>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2024 RN PhotoFilms. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Admin Panel -->
+    <div id="admin-panel" class="admin-panel hidden">
+        <!-- Admin Login -->
+        <div id="admin-login" class="admin-section">
+            <div class="admin-login-form">
+                <h2>Admin Login</h2>
+                <form id="login-form">
+                    <div class="form-group">
+                        <label class="form-label">Email</label>
+                        <input type="email" id="admin-email" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Password</label>
+                        <input type="password" id="admin-password" class="form-control" required>
+                    </div>
+                    <button type="submit" class="btn btn--primary btn--full-width">Login</button>
+                </form>
+                <button class="admin-close" onclick="hideAdminPanel()">×</button>
+            </div>
+        </div>
+
+        <!-- Admin Dashboard -->
+        <div id="admin-dashboard" class="admin-section hidden">
+            <div class="admin-header">
+                <h1>Admin Dashboard</h1>
+                <button class="btn btn--outline" onclick="hideAdminPanel()">Close Dashboard</button>
+            </div>
+
+            <!-- Admin Navigation -->
+            <nav class="admin-nav">
+                <button class="admin-nav-btn active" data-section="overview">Dashboard</button>
+                <button class="admin-nav-btn" data-section="bookings">Bookings</button>
+                <button class="admin-nav-btn" data-section="clients">Clients</button>
+                <button class="admin-nav-btn" data-section="team-management">Team</button>
+                <button class="admin-nav-btn" data-section="analytics">Analytics</button>
+                <button class="admin-nav-btn" data-section="finance">Finance</button>
+                <button class="admin-nav-btn" data-section="crm">CRM</button>
+            </nav>
+
+            <div class="admin-content">
+                <!-- Dashboard Overview -->
+                <div id="admin-overview" class="admin-content-section active">
+                    <div class="metrics-grid" id="metrics-grid">
+                        <!-- Metrics will be populated by JavaScript -->
+                    </div>
+                    <div class="recent-bookings">
+                        <h3>Recent Bookings</h3>
+                        <div class="table-container">
+                            <table class="admin-table" id="recent-bookings-table">
+                                <!-- Table will be populated by JavaScript -->
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Bookings Management -->
+                <div id="admin-bookings" class="admin-content-section">
+                    <div class="section-actions">
+                        <h2>Booking Management</h2>
+                        <div class="action-buttons">
+                            <button class="btn btn--primary" onclick="showAddBookingForm()">Add New Booking</button>
+                            <button class="btn btn--outline" onclick="exportBookings()">Export Bookings</button>
+                        </div>
+                    </div>
+                    <div class="table-container">
+                        <table class="admin-table" id="bookings-table">
+                            <!-- Bookings table will be populated by JavaScript -->
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Clients Management -->
+                <div id="admin-clients" class="admin-content-section">
+                    <div class="section-actions">
+                        <h2>Client Management</h2>
+                        <div class="action-buttons">
+                            <button class="btn btn--primary" onclick="showAddClientForm()">Add Client</button>
+                            <button class="btn btn--outline" onclick="sendBirthdayReminders()">Birthday Reminders</button>
+                            <button class="btn btn--outline" onclick="sendAnniversaryReminders()">Anniversary Reminders</button>
+                        </div>
+                    </div>
+                    <div class="table-container">
+                        <table class="admin-table" id="clients-table">
+                            <!-- Clients table will be populated by JavaScript -->
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Team Management -->
+                <div id="admin-team-management" class="admin-content-section">
+                    <div class="section-actions">
+                        <h2>Team Management</h2>
+                        <div class="action-buttons">
+                            <button class="btn btn--primary" onclick="showAddTeamMemberForm()">Add Team Member</button>
+                            <button class="btn btn--outline" onclick="markAttendance()">Mark Attendance</button>
+                        </div>
+                    </div>
+                    <div class="team-management-grid" id="team-management-grid">
+                        <!-- Team management cards will be populated by JavaScript -->
+                    </div>
+                </div>
+
+                <!-- Analytics -->
+                <div id="admin-analytics" class="admin-content-section">
+                    <h2>Analytics</h2>
+                    <div class="analytics-grid">
+                        <div class="card">
+                            <div class="card__body">
+                                <h3>Revenue Chart</h3>
+                                <canvas id="revenue-chart" style="position: relative; height: 300px;"></canvas>
+                            </div>
+                        </div>
+                        <div class="card">
+                            <div class="card__body">
+                                <h3>Booking Trends</h3>
+                                <canvas id="bookings-chart" style="position: relative; height: 300px;"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Finance -->
+                <div id="admin-finance" class="admin-content-section">
+                    <div class="section-actions">
+                        <h2>Finance Management</h2>
+                        <div class="action-buttons">
+                            <button class="btn btn--primary" onclick="showAddExpenseForm()">Add Expense</button>
+                            <button class="btn btn--outline" onclick="generateFinanceReport()">Generate Report</button>
+                        </div>
+                    </div>
+                    <div class="finance-overview">
+                        <div class="finance-card">
+                            <h4>Total Revenue</h4>
+                            <span class="finance-amount">₹5,25,000</span>
+                        </div>
+                        <div class="finance-card">
+                            <h4>Total Expenses</h4>
+                            <span class="finance-amount">₹1,75,000</span>
+                        </div>
+                        <div class="finance-card">
+                            <h4>Net Profit</h4>
+                            <span class="finance-amount">₹3,50,000</span>
+                        </div>
+                    </div>
+                    <div class="table-container">
+                        <table class="admin-table" id="expenses-table">
+                            <!-- Expenses table will be populated by JavaScript -->
+                        </table>
+                    </div>
+                </div>
+
+                <!-- CRM -->
+                <div id="admin-crm" class="admin-content-section">
+                    <div class="section-actions">
+                        <h2>CRM System</h2>
+                        <div class="action-buttons">
+                            <button class="btn btn--primary" onclick="addLead()">Add Lead</button>
+                            <button class="btn btn--outline" onclick="setupAutomation()">Setup Automation</button>
+                            <button class="btn btn--outline" onclick="exportCRM()">Export CRM</button>
+                        </div>
+                    </div>
+                    <div class="crm-pipeline" id="crm-pipeline">
+                        <!-- CRM pipeline will be populated by JavaScript -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modals -->
+    <!-- Booking Form Modal -->
+    <div id="booking-modal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Book Your Session</h3>
+                <button class="modal-close" onclick="hideModal('booking-modal')">×</button>
+            </div>
+            <form id="booking-form" class="modal-form">
+                <div class="form-group">
+                    <label class="form-label">Full Name *</label>
+                    <input type="text" id="booking-name" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Email *</label>
+                    <input type="email" id="booking-email" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Phone *</label>
+                    <input type="tel" id="booking-phone" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Service Type *</label>
+                    <select id="booking-service" class="form-control" required>
+                        <option value="">Select Service</option>
+                        <option value="wedding">Wedding Photography</option>
+                        <option value="prewedding">Pre-Wedding Shoot</option>
                         <option value="events">Event Photography</option>
                         <option value="portraits">Portrait Photography</option>
                     </select>
