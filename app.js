@@ -1,151 +1,539 @@
 // RN PhotoFilms - Complete JavaScript Application
-// This file contains all frontend functionality and Google Apps Script integration
 
-// ==================== CONFIGURATION ====================
-const CONFIG = {
-  // Replace with your deployed Google Apps Script Web App URL
-  WEB_APP_URL: 'https://script.google.com/macros/s/AKfycby3TyJGvOwXoHBzITaHJOtpmVfPb_Hj9W8p3DTtfgzUAC3mcVWWRQr2bmovJPek7I_sig/exec',
-
-  // Default admin credentials (change these in Google Sheets)
-  DEFAULT_ADMIN: {
-    username: 'admin',
-    password: 'admin123'
-  },
-
-  // App settings
-  SLIDESHOW_INTERVAL: 5000,
-  TOAST_DURATION: 5000,
-  ANIMATION_DURATION: 300
-};
-
-// ==================== APPLICATION STATE ====================
-const appState = {
-  currentSlide: 0,
-  currentLightboxIndex: 0,
-  currentGalleryFilter: 'all',
-  lightboxImages: [],
-  isLoggedIn: false,
-  currentUser: null,
-  currentAdminSection: 'dashboard',
-  appData: {
-    services: [
-      {
-        id: 'wedding',
-        name: 'Wedding Photography',
-        description: 'Capturing your most precious moments with artistic flair and professional expertise',
-        icon: '💒',
-        packages: [
-          { name: 'Classic Package', price: '₹75,000', features: ['6-8 hours coverage', '300+ edited photos', 'Online gallery', 'Basic album'] },
-          { name: 'Premium Package', price: '₹1,25,000', features: ['10-12 hours coverage', '500+ edited photos', 'Cinematic video', 'Premium album', 'Pre-wedding shoot'] },
-          { name: 'Luxury Package', price: '₹2,00,000', features: ['Full day coverage', '1000+ edited photos', '4K cinematic film', 'Luxury album', 'Pre-wedding shoot', 'Drone photography'] }
-        ]
-      },
-      {
-        id: 'prewedding',
-        name: 'Pre-Wedding Shoots',
-        description: 'Romantic and artistic sessions that tell your unique love story',
-        icon: '💕',
-        packages: [
-          { name: 'Essential Package', price: '₹25,000', features: ['2-3 hours shoot', '100+ edited photos', '2 outfit changes', 'Online gallery'] },
-          { name: 'Cinematic Package', price: '₹45,000', features: ['4-5 hours shoot', '200+ edited photos', 'Short cinematic video', '3 outfit changes', 'Premium locations'] }
-        ]
-      },
-      {
-        id: 'events',
-        name: 'Event Photography',
-        description: 'Professional coverage for corporate events, parties, and special occasions',
-        icon: '🎉',
-        packages: [
-          { name: 'Basic Coverage', price: '₹15,000', features: ['4 hours coverage', '150+ edited photos', 'Same day preview', 'Online gallery'] },
-          { name: 'Extended Coverage', price: '₹30,000', features: ['8 hours coverage', '400+ edited photos', 'Video highlights', 'USB delivery'] }
-        ]
-      },
-      {
-        id: 'portraits',
-        name: 'Portrait Photography',
-        description: 'Professional headshots and personal portraits for individuals and families',
-        icon: '👤',
-        packages: [
-          { name: 'Individual Session', price: '₹8,000', features: ['1 hour session', '25+ edited photos', 'Multiple poses', 'Digital delivery'] },
-          { name: 'Family Session', price: '₹15,000', features: ['2 hour session', '50+ edited photos', 'Group and individual shots', 'Print ready files'] }
-        ]
-      }
-    ],
-    galleryImages: {
-      wedding: [
-        'https://images.unsplash.com/photo-1606216794074-735e91aa2c92?w=400&h=600&fit=crop',
-        'https://images.unsplash.com/photo-1583939003579-730e3918a45a?w=400&h=300&fit=crop',
-        'https://images.unsplash.com/photo-1511285560929-80b456fea0bc?w=400&h=500&fit=crop',
-        'https://images.unsplash.com/photo-1594736797933-d0abc710c0fc?w=400&h=400&fit=crop',
-        'https://images.unsplash.com/photo-1519741497674-611481863552?w=400&h=450&fit=crop',
-        'https://images.unsplash.com/photo-1537633552985-df8429e8048b?w=400&h=350&fit=crop'
-      ],
-      prewedding: [
-        'https://images.unsplash.com/photo-1595434091143-b375ced5fe5c?w=400&h=500&fit=crop',
-        'https://images.unsplash.com/photo-1465495976277-4387d4b0e4a6?w=400&h=600&fit=crop',
-        'https://images.unsplash.com/photo-1519741497674-611481863552?w=400&h=400&fit=crop',
-        'https://images.unsplash.com/photo-1537633552985-df8429e8048b?w=400&h=450&fit=crop'
-      ],
-      events: [
-        'https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=400&h=500&fit=crop',
-        'https://images.unsplash.com/photo-1511795409834-ef04bbd61622?w=400&h=400&fit=crop',
-        'https://images.unsplash.com/photo-1505236858219-8359eb29e329?w=400&h=600&fit=crop'
-      ],
-      portraits: [
-        'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=600&fit=crop',
-        'https://images.unsplash.com/photo-1494790108755-2616b612b15b?w=400&h=500&fit=crop',
-        'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=400&h=400&fit=crop',
-        'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=400&h=450&fit=crop'
+// Application Data
+const appData = {
+  services: [
+    {
+      id: "wedding",
+      name: "Wedding Photography",
+      description: "Capturing your most precious moments with artistic flair and professional expertise",
+      packages: [
+        {
+          name: "Classic Package",
+          price: "₹75,000",
+          features: ["6-8 hours coverage", "300+ edited photos", "Online gallery", "Basic album"]
+        },
+        {
+          name: "Premium Package", 
+          price: "₹1,25,000",
+          features: ["10-12 hours coverage", "500+ edited photos", "Cinematic video", "Premium album", "Pre-wedding shoot"]
+        },
+        {
+          name: "Luxury Package",
+          price: "₹2,00,000", 
+          features: ["Full day coverage", "1000+ edited photos", "4K cinematic film", "Luxury album", "Pre-wedding shoot", "Drone photography"]
+        }
       ]
     },
-    team: [
-      { name: 'Rakesh Baria', position: 'Creative Director & Founder', experience: '4+ Years Experience', image: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=300&h=300&fit=crop&crop=face' },
-      { name: 'Tushar Tank', position: 'Lead Photographer & Videographer', experience: '5+ Years Experience', image: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=300&h=300&fit=crop&crop=face' },
-      { name: 'Vinod Bhabhor', position: 'Videographer', experience: '2+ Years Experience', image: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=300&h=300&fit=crop&crop=face' },
-      { name: 'Priya Singh', position: 'Client Relations Manager', experience: '4 Years Experience', image: 'https://images.unsplash.com/photo-1494790108755-2616b612b15b?w=300&h=300&fit=crop&crop=face' }
+    {
+      id: "prewedding",
+      name: "Pre-Wedding Shoots",
+      description: "Romantic and artistic sessions that tell your unique love story",
+      packages: [
+        {
+          name: "Essential Package",
+          price: "₹25,000",
+          features: ["2-3 hours shoot", "100+ edited photos", "2 outfit changes", "Online gallery"]
+        },
+        {
+          name: "Cinematic Package",
+          price: "₹45,000", 
+          features: ["4-5 hours shoot", "200+ edited photos", "Short cinematic video", "3 outfit changes", "Premium locations"]
+        }
+      ]
+    },
+    {
+      id: "events", 
+      name: "Event Photography",
+      description: "Professional coverage for corporate events, parties, and special occasions",
+      packages: [
+        {
+          name: "Basic Coverage",
+          price: "₹15,000",
+          features: ["4 hours coverage", "150+ edited photos", "Same day preview", "Online gallery"]
+        },
+        {
+          name: "Extended Coverage",
+          price: "₹30,000",
+          features: ["8 hours coverage", "400+ edited photos", "Video highlights", "USB delivery"]
+        }
+      ]
+    },
+    {
+      id: "portraits",
+      name: "Portrait Photography", 
+      description: "Professional headshots and personal portraits for individuals and families",
+      packages: [
+        {
+          name: "Individual Session",
+          price: "₹8,000",
+          features: ["1 hour session", "25+ edited photos", "Multiple poses", "Digital delivery"]
+        },
+        {
+          name: "Family Session",
+          price: "₹15,000",
+          features: ["2 hour session", "50+ edited photos", "Group and individual shots", "Print ready files"]
+        }
+      ]
+    }
+  ],
+  team: [
+    {
+      name: "Rakesh Baria",
+      position: "Creative Director & Founder", 
+      experience: "4+ Years Experience",
+      image: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=300&h=300&fit=crop&crop=face",
+      salary: "₹45,000",
+      lastPaid: "2024-09-01",
+      pending: "₹0",
+      attendance: 95
+    },
+    {
+      name: "Tushar Tank",
+      position: "Lead Photographer & Videographer",
+      experience: "5+ Years Experience", 
+      image: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=300&h=300&fit=crop&crop=face",
+      salary: "₹38,000",
+      lastPaid: "2024-09-01",
+      pending: "₹0",
+      attendance: 92
+    },
+    {
+      name: "Vinod Bhabhor", 
+      position: "Videographer",
+      experience: "2+ Years Experience",
+      image: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=300&h=300&fit=crop&crop=face",
+      salary: "₹25,000",
+      lastPaid: "2024-08-15",
+      pending: "₹12,500",
+      attendance: 88
+    },
+    {
+      name: "Priya Singh",
+      position: "Client Relations Manager",
+      experience: "4 Years Experience",
+      image: "https://images.unsplash.com/photo-1494790108755-2616b612b15b?w=300&h=300&fit=crop&crop=face",
+      salary: "₹30,000",
+      lastPaid: "2024-09-01",
+      pending: "₹0",
+      attendance: 96
+    }
+  ],
+  galleryImages: {
+    wedding: [
+      "https://images.unsplash.com/photo-1606216794074-735e91aa2c92?w=400&h=600&fit=crop",
+      "https://images.unsplash.com/photo-1583939003579-730e3918a45a?w=400&h=300&fit=crop",
+      "https://images.unsplash.com/photo-1511285560929-80b456fea0bc?w=400&h=500&fit=crop",
+      "https://images.unsplash.com/photo-1594736797933-d0abc710c0fc?w=400&h=400&fit=crop",
+      "https://images.unsplash.com/photo-1519741497674-611481863552?w=400&h=450&fit=crop",
+      "https://images.unsplash.com/photo-1537633552985-df8429e8048b?w=400&h=350&fit=crop"
     ],
-    blogPosts: [
-      {
-        id: 1,
-        title: '10 Essential Wedding Photography Tips for Perfect Shots',
-        excerpt: 'Discover professional techniques and insider secrets for capturing those perfect wedding moments that couples will treasure forever.',
-        date: '2024-09-20',
-        author: 'Rakesh Baria',
-        image: 'https://images.unsplash.com/photo-1519741497674-611481863552?w=600&h=400&fit=crop',
-        category: 'Wedding Tips'
-      },
-      {
-        id: 2,
-        title: 'Best Pre-Wedding Shoot Locations in Mumbai',
-        excerpt: 'Explore the most romantic and picturesque locations for pre-wedding photography that tell your unique love story.',
-        date: '2024-09-15',
-        author: 'Tushar Tank',
-        image: 'https://images.unsplash.com/photo-1537633552985-df8429e8048b?w=600&h=400&fit=crop',
-        category: 'Locations'
-      }
+    prewedding: [
+      "https://images.unsplash.com/photo-1595434091143-b375ced5fe5c?w=400&h=500&fit=crop", 
+      "https://images.unsplash.com/photo-1465495976277-4387d4b0e4a6?w=400&h=600&fit=crop",
+      "https://images.unsplash.com/photo-1519741497674-611481863552?w=400&h=400&fit=crop",
+      "https://images.unsplash.com/photo-1537633552985-df8429e8048b?w=400&h=450&fit=crop"
+    ],
+    events: [
+      "https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=400&h=500&fit=crop",
+      "https://images.unsplash.com/photo-1511795409834-ef04bbd61622?w=400&h=400&fit=crop", 
+      "https://images.unsplash.com/photo-1505236858219-8359eb29e329?w=400&h=600&fit=crop"
+    ],
+    portraits: [
+      "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=600&fit=crop",
+      "https://images.unsplash.com/photo-1494790108755-2616b612b15b?w=400&h=500&fit=crop", 
+      "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=400&h=400&fit=crop",
+      "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=400&h=450&fit=crop"
+    ]
+  },
+  adminMetrics: [
+    {"name": "Total Bookings", "value": "47", "change": "+12%", "icon": "📅"},
+    {"name": "This Month Revenue", "value": "₹3,25,000", "change": "+25%", "icon": "💰"}, 
+    {"name": "Pending Payments", "value": "₹45,000", "change": "-8%", "icon": "⏳"},
+    {"name": "Active Clients", "value": "23", "change": "+5%", "icon": "👥"}
+  ],
+  recentBookings: [
+    {"id": 1, "client": "Rajesh & Priya", "service": "Wedding", "date": "2024-10-15", "status": "Confirmed", "amount": "₹1,25,000", "photographer": "Tushar Tank"},
+    {"id": 2, "client": "Amit & Sneha", "service": "Pre-Wedding", "date": "2024-10-08", "status": "Completed", "amount": "₹45,000", "photographer": "Rakesh Baria"},
+    {"id": 3, "client": "Rohit & Kavya", "service": "Wedding", "date": "2024-11-02", "status": "Inquiry", "amount": "₹2,00,000", "photographer": "Unassigned"},
+    {"id": 4, "client": "Neha & Vikram", "service": "Pre-Wedding", "date": "2024-09-28", "status": "Confirmed", "amount": "₹25,000", "photographer": "Vinod Bhabhor"},
+    {"id": 5, "client": "Corporate Event XYZ", "service": "Event", "date": "2024-10-20", "status": "Inquiry", "amount": "₹15,000", "photographer": "Unassigned"}
+  ],
+  blogPosts: [
+    {
+      id: 1,
+      title: "10 Essential Wedding Photography Tips for Perfect Shots", 
+      excerpt: "Discover professional techniques and insider secrets for capturing those perfect wedding moments that couples will treasure forever.",
+      date: "2024-09-20",
+      author: "Rakesh Baria",
+      image: "https://images.unsplash.com/photo-1519741497674-611481863552?w=600&h=400&fit=crop",
+      category: "Wedding Tips"
+    },
+    {
+      id: 2,
+      title: "Best Pre-Wedding Shoot Locations in Mumbai",
+      excerpt: "Explore the most romantic and picturesque locations for pre-wedding photography that tell your unique love story.",
+      date: "2024-09-15", 
+      author: "Tushar Tank",
+      image: "https://images.unsplash.com/photo-1537633552985-df8429e8048b?w=600&h=400&fit=crop",
+      category: "Locations"
+    }
+  ],
+  clients: [
+    {"id": 1, "name": "Rajesh & Priya", "email": "rajesh@email.com", "phone": "+91 9876543210", "address": "Mumbai", "eventType": "Wedding", "birthday": "1995-05-15", "anniversary": "2024-10-15"},
+    {"id": 2, "name": "Amit & Sneha", "email": "amit@email.com", "phone": "+91 9876543211", "address": "Delhi", "eventType": "Pre-Wedding", "birthday": "1992-08-22", "anniversary": "2023-12-10"},
+    {"id": 3, "name": "Rohit & Kavya", "email": "rohit@email.com", "phone": "+91 9876543212", "address": "Bangalore", "eventType": "Wedding", "birthday": "1990-03-10", "anniversary": "2024-11-02"}
+  ],
+  expenses: [
+    {"id": 1, "category": "Equipment", "description": "Canon EOS R5 Camera", "amount": "₹2,50,000", "date": "2024-08-15"},
+    {"id": 2, "category": "Travel", "description": "Client shoot travel expenses", "amount": "₹5,000", "date": "2024-09-10"},
+    {"id": 3, "category": "Marketing", "description": "Instagram ads campaign", "amount": "₹15,000", "date": "2024-09-01"},
+    {"id": 4, "category": "Software", "description": "Adobe Creative Suite subscription", "amount": "₹2,000", "date": "2024-09-01"}
+  ],
+  crmData: {
+    leads: [
+      {"id": 1, "name": "Sarah Johnson", "service": "Wedding", "status": "Hot Lead", "value": "₹1,50,000", "stage": "follow-up"},
+      {"id": 2, "name": "Michael Chen", "service": "Pre-Wedding", "status": "Warm Lead", "value": "₹35,000", "stage": "proposal"},
+      {"id": 3, "name": "Tech Corp", "service": "Event", "status": "Cold Lead", "value": "₹25,000", "stage": "contacted"}
     ]
   }
 };
 
-// ==================== INITIALIZATION ====================
+// State Management
+let currentGalleryFilter = 'all';
+let currentImageIndex = 0;
+let currentGalleryImages = [];
+let isAdminLoggedIn = false;
+
+// DOM Elements
+const navbar = document.getElementById('navbar');
+const navToggle = document.getElementById('nav-toggle');
+const navMenu = document.getElementById('nav-menu');
+
+// Initialize Application
 document.addEventListener('DOMContentLoaded', function() {
   initializeApp();
 });
 
 function initializeApp() {
-  console.log('🎥 Initializing RN PhotoFilms Application...');
+  setupEventListeners();
+  renderServices();
+  renderGallery();
+  renderTeam();
+  renderBlog();
+  setupNavigation();
+  setupScrollEffects();
+  fixDateInputs();
+}
 
-  // Initialize components
-  initLoadingScreen();
-  initNavigation();
-  initHeroSection();
-  initServices();
-  initGallery();
-  initTeam();
-  initBlog();
-  initContactForm();
-  initAdminPanel();
-  initModals();
+// Fix date inputs to ensure proper functionality
+function fixDateInputs() {
+  // Set minimum date to today for booking forms
+  const today = new Date().toISOString().split('T')[0];
+  const dateInputs = document.querySelectorAll('input[type="date"]');
+  
+  dateInputs.forEach(input => {
+    if (input.id.includes('event-date') || input.id.includes('booking-date')) {
+      input.min = today;
+    }
+    
+    // Ensure date inputs display selected values correctly
+    input.addEventListener('change', function() {
+      this.setAttribute('data-selected', this.value);
+      // Force update display
+      if (this.value) {
+        this.classList.add('has-value');
+      } else {
+        this.classList.remove('has-value');
+      }
+    });
+    
+    // Check if input already has a value
+    if (input.value) {
+      input.classList.add('has-value');
+    }
+  });
+}
+
+// Event Listeners Setup
+function setupEventListeners() {
+  // Navigation toggle for mobile
+  navToggle?.addEventListener('click', () => {
+    navMenu.classList.toggle('active');
+    navToggle.classList.toggle('active');
+  });
+
+  // Gallery filters
+  document.querySelectorAll('.filter-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+      e.target.classList.add('active');
+      currentGalleryFilter = e.target.dataset.filter;
+      renderGallery();
+    });
+  });
+
+  // Form submissions
+  document.getElementById('booking-form')?.addEventListener('submit', handleBookingSubmission);
+  document.getElementById('contact-form')?.addEventListener('submit', handleContactSubmission);
+  document.getElementById('login-form')?.addEventListener('submit', handleAdminLogin);
+  document.getElementById('add-booking-form')?.addEventListener('submit', handleAddBooking);
+  document.getElementById('add-client-form')?.addEventListener('submit', handleAddClient);
+  document.getElementById('add-expense-form')?.addEventListener('submit', handleAddExpense);
+
+  // Admin navigation
+  document.querySelectorAll('.admin-nav-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      switchAdminSection(e.target.dataset.section);
+    });
+  });
+
+  // Service selection change in booking form
+  document.getElementById('booking-service')?.addEventListener('change', updatePackageOptions);
+}
+
+// Navigation Functions
+function setupNavigation() {
+  // Smooth scrolling for navigation links
+  document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+    anchor.addEventListener('click', function (e) {
+      e.preventDefault();
+      const target = document.querySelector(this.getAttribute('href'));
+      if (target) {
+        target.scrollIntoView({
+          behavior: 'smooth',
+          block: 'start'
+        });
+        // Close mobile menu if open
+        navMenu.classList.remove('active');
+        navToggle.classList.remove('active');
+      }
+    });
+  });
+}
+
+function setupScrollEffects() {
+  window.addEventListener('scroll', () => {
+    if (window.scrollY > 50) {
+      navbar.classList.add('scrolled');
+    } else {
+      navbar.classList.remove('scrolled');
+    }
+  });
+}
+
+// Render Functions
+function renderServices() {
+  const servicesGrid = document.getElementById('services-grid');
+  if (!servicesGrid) return;
+
+  servicesGrid.innerHTML = appData.services.map(service => `
+    <div class="service-card">
+      <h3 class="service-title">${service.name}</h3>
+      <p class="service-description">${service.description}</p>
+      <div class="service-packages">
+        ${service.packages.map(pkg => `
+          <div class="package">
+            <div class="package-header">
+              <span class="package-name">${pkg.name}</span>
+              <span class="package-price">${pkg.price}</span>
+            </div>
+            <ul class="package-features">
+              ${pkg.features.map(feature => `<li>${feature}</li>`).join('')}
+            </ul>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+  `).join('');
+}
+
+function renderGallery() {
+  const galleryGrid = document.getElementById('gallery-grid');
+  if (!galleryGrid) return;
+
+  let imagesToShow = [];
+  
+  if (currentGalleryFilter === 'all') {
+    imagesToShow = Object.entries(appData.galleryImages).flatMap(([category, images]) =>
+      images.map(img => ({ src: img, category }))
+    );
+  } else {
+    imagesToShow = appData.galleryImages[currentGalleryFilter]?.map(img => 
+      ({ src: img, category: currentGalleryFilter })
+    ) || [];
+  }
+
+  currentGalleryImages = imagesToShow.map(img => img.src);
+
+  galleryGrid.innerHTML = imagesToShow.map((img, index) => `
+    <div class="gallery-item" data-category="${img.category}" onclick="openLightbox(${index})">
+      <img src="${img.src}" alt="${img.category} photography" loading="lazy">
+    </div>
+  `).join('');
+}
+
+function renderTeam() {
+  const teamGrid = document.getElementById('team-grid');
+  if (!teamGrid) return;
+
+  teamGrid.innerHTML = appData.team.map(member => `
+    <div class="team-member">
+      <div class="team-member-image">
+        <img src="${member.image}" alt="${member.name}">
+      </div>
+      <h4 class="team-member-name">${member.name}</h4>
+      <p class="team-member-position">${member.position}</p>
+      <p class="team-member-experience">${member.experience}</p>
+    </div>
+  `).join('');
+}
+
+function renderBlog() {
+  const blogGrid = document.getElementById('blog-grid');
+  if (!blogGrid) return;
+
+  blogGrid.innerHTML = appData.blogPosts.map(post => `
+    <article class="blog-post">
+      <div class="blog-post-image">
+        <img src="${post.image}" alt="${post.title}">
+      </div>
+      <div class="blog-post-content">
+        <div class="blog-post-meta">
+          <span class="blog-post-category">${post.category}</span>
+          <span class="blog-post-date">${formatDate(post.date)}</span>
+        </div>
+        <h3 class="blog-post-title">${post.title}</h3>
+        <p class="blog-post-excerpt">${post.excerpt}</p>
+      </div>
+    </article>
+  `).join('');
+}
+
+// Admin Panel Functions
+function showAdminLogin() {
+  document.getElementById('admin-panel').classList.remove('hidden');
+  document.getElementById('admin-login').classList.remove('hidden');
+  document.getElementById('admin-dashboard').classList.add('hidden');
+}
+
+function hideAdminPanel() {
+  document.getElementById('admin-panel').classList.add('hidden');
+  document.getElementById('admin-login').classList.add('hidden');
+  document.getElementById('admin-dashboard').classList.add('hidden');
+  isAdminLoggedIn = false;
+}
+
+function handleAdminLogin(e) {
+  e.preventDefault();
+  const email = document.getElementById('admin-email').value;
+  const password = document.getElementById('admin-password').value;
+
+  // Simple authentication (in real app, this would be server-side)
+  if (email === 'admin@rnphotofilms.com' && password === 'admin123') {
+    isAdminLoggedIn = true;
+    document.getElementById('admin-login').classList.add('hidden');
+    document.getElementById('admin-dashboard').classList.remove('hidden');
+    renderAdminDashboard();
+    showToast('Login successful!', 'success');
+  } else {
+    showToast('Invalid credentials!', 'error');
+  }
+}
+
+function renderAdminDashboard() {
+  renderMetrics();
+  renderRecentBookings();
+  renderBookingsTable();
+  renderClientsTable();
+  renderTeamManagement();
+  renderExpensesTable();
+  renderCRMPipeline();
+  renderAnalyticsCharts();
+}
+
+function renderMetrics() {
+  const metricsGrid = document.getElementById('metrics-grid');
+  if (!metricsGrid) return;
+
+  metricsGrid.innerHTML = appData.adminMetrics.map(metric => `
+    <div class="metric-card">
+      <div class="metric-header">
+        <span class="metric-icon">${metric.icon}</span>
+        <span class="metric-change ${metric.change.startsWith('+') ? 'positive' : 'negative'}">${metric.change}</span>
+      </div>
+      <div class="metric-value">${metric.value}</div>
+      <div class="metric-label">${metric.name}</div>
+    </div>
+  `).join('');
+}
+
+function renderRecentBookings() {
+  const table = document.getElementById('recent-bookings-table');
+  if (!table) return;
+
+  table.innerHTML = `
+    <thead>
+      <tr>
+        <th>Client</th>
+        <th>Service</th>
+        <th>Date</th>
+        <th>Status</th>
+        <th>Amount</th>
+        <th>Photographer</th>
+      </tr>
+    </thead>
+    <tbody>
+      ${appData.recentBookings.slice(0, 5).map(booking => `
+        <tr>
+          <td>${booking.client}</td>
+          <td>${booking.service}</td>
+          <td>${formatDate(booking.date)}</td>
+          <td><span class="status status--${getStatusClass(booking.status)}">${booking.status}</span></td>
+          <td>${booking.amount}</td>
+          <td>${booking.photographer}</td>
+        </tr>
+      `).join('')}
+    </tbody>
+  `;
+}
+
+function renderBookingsTable() {
+  const table = document.getElementById('bookings-table');
+  if (!table) return;
+
+  table.innerHTML = `
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Client</th>
+        <th>Service</th>
+        <th>Date</th>
+        <th>Status</th>
+        <th>Amount</th>
+        <th>Photographer</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      ${appData.recentBookings.map(booking => `
+        <tr>
+          <td>#${booking.id}</td>
+          <td>${booking.client}</td>
+          <td>${booking.service}</td>
+          <td>${formatDate(booking.date)}</td>
+          <td>
+            <select class="form-control" onchange="updateBookingStatus(${booking.id}, this.value)">
+              <option value="Inquiry" ${booking.status === 'Inquiry' ? 'selected' : ''}>Inquiry</option>
+              <option value="Confirmed" ${booking.status === 'Confirmed' ? 'selected' : ''}>Confirmed</option>
+              <option value="Completed" ${booking.status === 'Completed' ? 'selected' : ''}>Completed</option>
+              <option value="Cancelled" ${booking.status === 'Cancelled' ? 'selected' : ''}>Cancelled</option>
+            </select>
+          </td>
+          <td>${booking.amount}</td>
+          <td>
+            <select class="form-control" onchange="assignPhotographer(${booking.id}, this.value)">
+          initModals();
   initLightbox();
   initToast();
   initScrollEffects();
@@ -1047,7 +1435,7 @@ function generateTeamGridHTML() {
 
 // ==================== GOOGLE APPS SCRIPT INTEGRATION ====================
 async function authenticateUser(username, password) {
-  if (CONFIG.WEB_APP_URL === 'YOUR_GOOGLE_APPS_SCRIPT_WEB_APP_URL_HERE') {
+  if (CONFIG.WEB_APP_URL === 'https://script.google.com/macros/s/AKfycby3TyJGvOwXoHBzITaHJOtpmVfPb_Hj9W8p3DTtfgzUAC3mcVWWRQr2bmovJPek7I_sig/exec') {
     // Fallback authentication for testing
     if (username === CONFIG.DEFAULT_ADMIN.username && password === CONFIG.DEFAULT_ADMIN.password) {
       return {
@@ -1074,7 +1462,7 @@ async function authenticateUser(username, password) {
 }
 
 async function addBooking(bookingData) {
-  if (CONFIG.WEB_APP_URL === 'YOUR_GOOGLE_APPS_SCRIPT_WEB_APP_URL_HERE') {
+  if (CONFIG.WEB_APP_URL === 'https://script.google.com/macros/s/AKfycby3TyJGvOwXoHBzITaHJOtpmVfPb_Hj9W8p3DTtfgzUAC3mcVWWRQr2bmovJPek7I_sig/exec') {
     // Simulate successful booking for testing
     console.log('Booking data:', bookingData);
     return { success: true, message: 'Booking added successfully', bookingId: 'BK' + Date.now() };
@@ -1096,7 +1484,7 @@ async function addBooking(bookingData) {
 }
 
 async function addClient(clientData) {
-  if (CONFIG.WEB_APP_URL === 'YOUR_GOOGLE_APPS_SCRIPT_WEB_APP_URL_HERE') {
+  if (CONFIG.WEB_APP_URL === 'https://script.google.com/macros/s/AKfycby3TyJGvOwXoHBzITaHJOtpmVfPb_Hj9W8p3DTtfgzUAC3mcVWWRQr2bmovJPek7I_sig/exec') {
     console.log('Client data:', clientData);
     return { success: true, message: 'Client added successfully', clientId: 'CL' + Date.now() };
   }
@@ -1117,7 +1505,7 @@ async function addClient(clientData) {
 }
 
 async function addTeamMember(memberData) {
-  if (CONFIG.WEB_APP_URL === 'YOUR_GOOGLE_APPS_SCRIPT_WEB_APP_URL_HERE') {
+  if (CONFIG.WEB_APP_URL === 'https://script.google.com/macros/s/AKfycby3TyJGvOwXoHBzITaHJOtpmVfPb_Hj9W8p3DTtfgzUAC3mcVWWRQr2bmovJPek7I_sig/exec') {
     console.log('Team member data:', memberData);
     return { success: true, message: 'Team member added successfully', memberId: 'TM' + Date.now() };
   }
@@ -1138,7 +1526,7 @@ async function addTeamMember(memberData) {
 }
 
 async function addExpense(expenseData) {
-  if (CONFIG.WEB_APP_URL === 'YOUR_GOOGLE_APPS_SCRIPT_WEB_APP_URL_HERE') {
+  if (CONFIG.WEB_APP_URL === 'https://script.google.com/macros/s/AKfycby3TyJGvOwXoHBzITaHJOtpmVfPb_Hj9W8p3DTtfgzUAC3mcVWWRQr2bmovJPek7I_sig/exec') {
     console.log('Expense data:', expenseData);
     return { success: true, message: 'Expense added successfully', expenseId: 'EX' + Date.now() };
   }
