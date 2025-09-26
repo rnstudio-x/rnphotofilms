@@ -4,618 +4,189 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>RN PhotoFilms - Professional Photography Services</title>
+    <meta name="description" content="Professional wedding, pre-wedding, event and portrait photography services by RN PhotoFilms. Capturing your precious moments with artistic excellence.">
     <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <meta name="description" content="RN PhotoFilms - Professional wedding, pre-wedding, portrait photography and videography services in Thandla, Madhya Pradesh">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 </head>
 <body>
-    <!-- Page Loader -->
-    <div id="loader" class="loader">
-        <div class="loader-content">
-            <div class="camera-icon">
-                <i class="fas fa-camera-retro"></i>
+    <!-- Navigation -->
+    <nav class="navbar" id="navbar">
+        <div class="nav-container">
+            <div class="nav-logo">
+                <h2>RN PhotoFilms</h2>
             </div>
-            <h2 class="loader-title">RN PhotoFilms</h2>
-            <p class="loader-subtitle">Your Emotions, Our Lens</p>
-            <div class="loading-bar">
-                <div class="loading-progress"></div>
+            <div class="nav-menu" id="nav-menu">
+                <a href="#home" class="nav-link">Home</a>
+                <a href="#services" class="nav-link">Services</a>
+                <a href="#gallery" class="nav-link">Gallery</a>
+                <a href="#team" class="nav-link">Team</a>
+                <a href="#blog" class="nav-link">Blog</a>
+                <a href="#contact" class="nav-link">Contact</a>
+                <button class="btn btn--primary" onclick="showAdminLogin()">Admin</button>
             </div>
-        </div>
-    </div>
-
-    <!-- Fixed Social Sidebar -->
-    <div class="social-sidebar" id="socialSidebar">
-        <div class="social-links">
-            <a href="https://instagram.com/rn.photo.films" target="_blank" class="social-link social-instagram">
-                <i class="fab fa-instagram"></i>
-                <span class="social-tooltip">Follow on Instagram</span>
-            </a>
-            <a href="https://facebook.com/RNPhotoFilms" target="_blank" class="social-link social-facebook">
-                <i class="fab fa-facebook-f"></i>
-                <span class="social-tooltip">Like on Facebook</span>
-            </a>
-            <a href="https://youtube.com/@rnphotofilms" target="_blank" class="social-link social-youtube">
-                <i class="fab fa-youtube"></i>
-                <span class="social-tooltip">Subscribe on YouTube</span>
-            </a>
-        </div>
-        <div class="scroll-indicator">
-            <div class="scroll-line"></div>
-        </div>
-    </div>
-
-    <!-- Circular Theme Selector -->
-    <div class="circular-theme-selector" id="circularThemeSelector">
-        <button class="theme-toggle-btn" id="themeToggleBtn">
-            <i class="fas fa-palette"></i>
-        </button>
-        <div class="theme-wheel" id="themeWheel">
-            <div class="theme-option" data-theme="light" style="--theme-color: #218d8d">
-                <span class="theme-name">Light</span>
-            </div>
-            <div class="theme-option" data-theme="dark" style="--theme-color: #32b8c6">
-                <span class="theme-name">Dark</span>
-            </div>
-            <div class="theme-option" data-theme="ocean" style="--theme-color: #0077be">
-                <span class="theme-name">Ocean</span>
-            </div>
-            <div class="theme-option" data-theme="forest" style="--theme-color: #228B22">
-                <span class="theme-name">Forest</span>
-            </div>
-            <div class="theme-option" data-theme="sunset" style="--theme-color: #ff6b35">
-                <span class="theme-name">Sunset</span>
-            </div>
-            <div class="theme-option" data-theme="lavender" style="--theme-color: #9c27b0">
-                <span class="theme-name">Lavender</span>
+            <div class="nav-toggle" id="nav-toggle">
+                <span></span>
+                <span></span>
+                <span></span>
             </div>
         </div>
-    </div>
+    </nav>
 
-    <!-- Header -->
-    <header class="header" id="header">
-        <nav class="navbar">
-            <div class="nav-container">
-                <div class="nav-brand">
-                    <h1 class="brand-name">RN PhotoFilms</h1>
-                    <p class="brand-tagline">Your Emotions, Our Lens</p>
-                </div>
-                <div class="nav-menu" id="navMenu">
-                    <ul class="nav-list">
-                        <li class="nav-item"><a href="#home" class="nav-link active">Home</a></li>
-                        <li class="nav-item"><a href="#about" class="nav-link">About</a></li>
-                        <li class="nav-item dropdown">
-                            <a href="#services" class="nav-link">Services <i class="fas fa-chevron-down"></i></a>
-                            <ul class="dropdown-menu">
-                                <li><a href="#" onclick="showServicePage('wedding')" class="dropdown-link">Wedding Photography</a></li>
-                                <li><a href="#" onclick="showServicePage('prewedding')" class="dropdown-link">Pre-Wedding Shoots</a></li>
-                                <li><a href="#" onclick="showServicePage('events')" class="dropdown-link">Event Photography</a></li>
-                                <li><a href="#" onclick="showServicePage('portraits')" class="dropdown-link">Portrait Photography</a></li>
-                            </ul>
-                        </li>
-                        <li class="nav-item"><a href="#gallery" class="nav-link">Portfolio</a></li>
-                        <li class="nav-item"><a href="#team" class="nav-link">Team</a></li>
-                        <li class="nav-item"><a href="#blog" class="nav-link">Blog</a></li>
-                        <li class="nav-item"><a href="#booking" class="nav-link">Book Now</a></li>
-                        <li class="nav-item"><a href="#contact" class="nav-link">Contact</a></li>
-                        <li class="nav-item"><a href="#" onclick="showAdminLogin()" class="nav-link admin-link">Admin</a></li>
-                    </ul>
-                </div>
-                <div class="nav-toggle" id="navToggle">
-                    <span class="toggle-line"></span>
-                    <span class="toggle-line"></span>
-                    <span class="toggle-line"></span>
+    <!-- Hero Section -->
+    <section id="home" class="hero">
+        <div class="hero-content">
+            <div class="hero-text">
+                <h1 class="hero-title">
+                    Crafting <span class="highlight">Timeless</span> 
+                    <br>Visual Stories
+                </h1>
+                <p class="hero-subtitle">
+                    Professional photography that captures your most precious moments with artistic flair and cinematic excellence. From weddings to portraits, we create memories that last forever.
+                </p>
+                <div class="hero-actions">
+                    <button class="btn btn--primary btn--lg" onclick="showBookingForm()">
+                        <span class="btn-text">Book Your Session</span>
+                        <span class="btn-loader hidden">...</span>
+                    </button>
+                    <button class="btn btn--outline btn--lg" onclick="showContactForm()">
+                        <span class="btn-text">Get in Touch</span>
+                        <span class="btn-loader hidden">...</span>
+                    </button>
                 </div>
             </div>
-        </nav>
-    </header>
-
-    <!-- Main Content -->
-    <main id="mainContent">
-        <!-- Hero Section -->
-        <section id="home" class="hero">
-            <div class="hero-slideshow">
-                <div class="hero-slide active">
-                    <img src="https://images.unsplash.com/photo-1606216794074-735e91aa2c92?w=1920&h=1080&fit=crop" alt="Wedding Photography">
-                    <div class="slide-overlay"></div>
-                </div>
-                <div class="hero-slide">
-                    <img src="https://images.unsplash.com/photo-1583939003579-730e3918a45a?w=1920&h=1080&fit=crop" alt="Pre-Wedding Photography">
-                    <div class="slide-overlay"></div>
-                </div>
-                <div class="hero-slide">
-                    <img src="https://images.unsplash.com/photo-1511285560929-80b456fea0bc?w=1920&h=1080&fit=crop" alt="Portrait Photography">
-                    <div class="slide-overlay"></div>
-                </div>
-            </div>
-            <div class="hero-content">
-                <div class="hero-text">
-                    <h1 class="hero-title">
-                        <span class="title-line professional-title">RN PhotoFilms</span>
-                        <span class="title-accent">Professional Photography</span>
-                    </h1>
-                    <p class="hero-subtitle">Capturing life's most precious moments with artistic vision and professional expertise</p>
-                    <div class="hero-actions">
-                        <a href="#booking" class="btn btn--primary btn--lg">Book Your Session</a>
-                        <a href="#gallery" class="btn btn--outline btn--lg">View Portfolio</a>
+            <div class="hero-visual">
+                <div class="hero-gallery">
+                    <div class="hero-image hero-image--1">
+                        <img src="https://images.unsplash.com/photo-1606216794074-735e91aa2c92?w=300&h=400&fit=crop" alt="Wedding Photography">
+                    </div>
+                    <div class="hero-image hero-image--2">
+                        <img src="https://images.unsplash.com/photo-1583939003579-730e3918a45a?w=250&h=350&fit=crop" alt="Pre-wedding Photography">
+                    </div>
+                    <div class="hero-image hero-image--3">
+                        <img src="https://images.unsplash.com/photo-1511285560929-80b456fea0bc?w=280&h=300&fit=crop" alt="Event Photography">
                     </div>
                 </div>
                 <div class="hero-stats">
-                    <div class="stat-item">
+                    <div class="stat">
                         <span class="stat-number">500+</span>
-                        <span class="stat-label">Weddings</span>
+                        <span class="stat-label">Happy Couples</span>
                     </div>
-                    <div class="stat-item">
-                        <span class="stat-number">8+</span>
-                        <span class="stat-label">Years Experience</span>
+                    <div class="stat">
+                        <span class="stat-number">4.9★</span>
+                        <span class="stat-label">Client Rating</span>
                     </div>
-                    <div class="stat-item">
-                        <span class="stat-number">1000+</span>
-                        <span class="stat-label">Happy Clients</span>
-                    </div>
-                </div>
-            </div>
-            <div class="hero-indicators">
-                <button class="indicator active" data-slide="0"></button>
-                <button class="indicator" data-slide="1"></button>
-                <button class="indicator" data-slide="2"></button>
-            </div>
-            <div class="scroll-indicator-hero">
-                <span>Scroll to explore</span>
-                <i class="fas fa-arrow-down"></i>
-            </div>
-        </section>
-
-        <!-- About Section -->
-        <section id="about" class="about-section">
-            <div class="container">
-                <div class="about-content">
-                    <div class="about-text">
-                        <div class="section-header">
-                            <span class="section-label">About Us</span>
-                            <h2 class="section-title">Capturing Emotions Through Our Lens</h2>
-                        </div>
-                        <p class="about-description">
-                            For over 8 years, RN PhotoFilms has been at the forefront of professional photography in Thandla, Madhya Pradesh. 
-                            We specialize in wedding photography, pre-wedding shoots, portraits, and cinematic videography 
-                            that tells your unique story with artistic flair and emotional depth.
-                        </p>
-                        <p class="about-mission">
-                            Our team combines technical expertise with creative vision to create timeless memories. 
-                            We believe every moment has a story, and we're passionate about preserving those stories 
-                            through beautiful, authentic imagery that you'll treasure forever.
-                        </p>
-                        <div class="about-features">
-                            <div class="feature-item">
-                                <i class="fas fa-award"></i>
-                                <span>Award-Winning Team</span>
-                            </div>
-                            <div class="feature-item">
-                                <i class="fas fa-camera"></i>
-                                <span>Latest Equipment</span>
-                            </div>
-                            <div class="feature-item">
-                                <i class="fas fa-heart"></i>
-                                <span>Personalized Service</span>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="about-media">
-                        <div class="about-image-grid">
-                            <img src="https://images.unsplash.com/photo-1554048612-b6a482b01e2b?w=400&h=500&fit=crop" alt="Professional Photography Team" class="about-img main-img">
-                            <img src="https://images.unsplash.com/photo-1492691527719-9d1e07e534b4?w=300&h=250&fit=crop" alt="Photography Equipment" class="about-img side-img">
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- Services Section -->
-        <section id="services" class="services-section">
-            <div class="container">
-                <div class="section-header centered">
-                    <span class="section-label">Our Services</span>
-                    <h2 class="section-title">Professional Photography Services</h2>
-                    <p class="section-subtitle">From intimate portraits to grand celebrations, we capture it all</p>
-                </div>
-                <div class="services-grid">
-                    <div class="service-card" onclick="showServicePage('wedding')">
-                        <div class="service-image">
-                            <img src="https://images.unsplash.com/photo-1606216794074-735e91aa2c92?w=400&h=300&fit=crop" alt="Wedding Photography">
-                            <div class="service-overlay">
-                                <i class="fas fa-heart"></i>
-                                <span>View Details</span>
-                            </div>
-                        </div>
-                        <div class="service-content">
-                            <h3>Wedding Photography</h3>
-                            <p>Capturing your most precious moments with artistic flair and professional expertise</p>
-                            <div class="service-price">Starting at ₹75,000</div>
-                        </div>
-                    </div>
-                    <div class="service-card" onclick="showServicePage('prewedding')">
-                        <div class="service-image">
-                            <img src="https://images.unsplash.com/photo-1583939003579-730e3918a45a?w=400&h=300&fit=crop" alt="Pre-Wedding Photography">
-                            <div class="service-overlay">
-                                <i class="fas fa-camera-retro"></i>
-                                <span>View Details</span>
-                            </div>
-                        </div>
-                        <div class="service-content">
-                            <h3>Pre-Wedding Shoots</h3>
-                            <p>Romantic and artistic sessions that tell your unique love story</p>
-                            <div class="service-price">Starting at ₹25,000</div>
-                        </div>
-                    </div>
-                    <div class="service-card" onclick="showServicePage('events')">
-                        <div class="service-image">
-                            <img src="https://images.unsplash.com/photo-1511285560929-80b456fea0bc?w=400&h=300&fit=crop" alt="Event Photography">
-                            <div class="service-overlay">
-                                <i class="fas fa-calendar-alt"></i>
-                                <span>View Details</span>
-                            </div>
-                        </div>
-                        <div class="service-content">
-                            <h3>Event Photography</h3>
-                            <p>Professional coverage for corporate events, parties, and special occasions</p>
-                            <div class="service-price">Starting at ₹15,000</div>
-                        </div>
-                    </div>
-                    <div class="service-card" onclick="showServicePage('portraits')">
-                        <div class="service-image">
-                            <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=300&fit=crop" alt="Portrait Photography">
-                            <div class="service-overlay">
-                                <i class="fas fa-user"></i>
-                                <span>View Details</span>
-                            </div>
-                        </div>
-                        <div class="service-content">
-                            <h3>Portrait Photography</h3>
-                            <p>Professional headshots and personal portraits for individuals and families</p>
-                            <div class="service-price">Starting at ₹8,000</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- Portfolio Gallery -->
-        <section id="gallery" class="gallery-section">
-            <div class="container">
-                <div class="section-header centered">
-                    <span class="section-label">Portfolio</span>
-                    <h2 class="section-title">Our Best Work</h2>
-                </div>
-                <div class="gallery-filters">
-                    <button class="filter-btn active" data-filter="all">All</button>
-                    <button class="filter-btn" data-filter="wedding">Weddings</button>
-                    <button class="filter-btn" data-filter="prewedding">Pre-Wedding</button>
-                    <button class="filter-btn" data-filter="portrait">Portraits</button>
-                </div>
-                <div class="gallery-masonry" id="galleryMasonry">
-                    <!-- Gallery items will be loaded dynamically -->
-                </div>
-            </div>
-        </section>
-
-        <!-- Team Section (Main Site Display Only) -->
-        <section id="team" class="team-section">
-            <div class="container">
-                <div class="section-header centered">
-                    <span class="section-label">Our Team</span>
-                    <h2 class="section-title">Meet the Creative Minds</h2>
-                </div>
-                <div class="team-grid" id="teamGrid">
-                    <!-- Team members will be loaded dynamically -->
-                </div>
-            </div>
-        </section>
-
-        <!-- Instagram Feed -->
-        <section id="instagram" class="instagram-section">
-            <div class="container">
-                <div class="section-header centered">
-                    <span class="section-label">Follow Us</span>
-                    <h2 class="section-title">Latest from Instagram</h2>
-                    <p class="instagram-handle">@rn.photo.films</p>
-                </div>
-                <div class="instagram-feed" id="instagramFeed">
-                    <!-- Instagram posts will be loaded dynamically -->
-                </div>
-                <div class="instagram-cta">
-                    <a href="https://instagram.com/rn.photo.films" target="_blank" class="btn btn--outline">Follow on Instagram</a>
-                </div>
-            </div>
-        </section>
-
-        <!-- Blog Section -->
-        <section id="blog" class="blog-section">
-            <div class="container">
-                <div class="section-header centered">
-                    <span class="section-label">Blog</span>
-                    <h2 class="section-title">Photography Tips & Stories</h2>
-                </div>
-                <div class="blog-controls">
-                    <div class="blog-search">
-                        <input type="text" id="blogSearch" placeholder="Search blog posts..." class="form-control">
-                        <i class="fas fa-search"></i>
-                    </div>
-                    <div class="blog-categories">
-                        <select id="blogCategoryFilter" class="form-control">
-                            <option value="all">All Categories</option>
-                            <option value="Wedding Photography">Wedding Photography</option>
-                            <option value="Pre-Wedding">Pre-Wedding</option>
-                            <option value="Videography">Videography</option>
-                            <option value="Portrait Photography">Portrait Photography</option>
-                            <option value="Event Photography">Event Photography</option>
-                            <option value="Business">Business</option>
-                        </select>
-                    </div>
-                </div>
-                <div class="blog-grid" id="blogGrid">
-                    <!-- Blog posts will be loaded dynamically -->
-                </div>
-            </div>
-        </section>
-
-        <!-- Booking Section -->
-        <section id="booking" class="booking-section">
-            <div class="container">
-                <div class="section-header centered">
-                    <span class="section-label">Book Now</span>
-                    <h2 class="section-title">Let's Create Magic Together</h2>
-                </div>
-                <div class="booking-content">
-                    <div class="booking-form-container">
-                        <form id="bookingForm" class="booking-form">
-                            <div class="form-grid">
-                                <div class="form-group">
-                                    <label class="form-label">Full Name *</label>
-                                    <input type="text" name="clientName" class="form-control" required>
-                                </div>
-                                <div class="form-group">
-                                    <label class="form-label">Email Address *</label>
-                                    <input type="email" name="clientEmail" class="form-control" required>
-                                </div>
-                                <div class="form-group">
-                                    <label class="form-label">Phone Number *</label>
-                                    <input type="tel" name="clientPhone" class="form-control" required>
-                                </div>
-                                <div class="form-group">
-                                    <label class="form-label">Service Type *</label>
-                                    <select name="serviceType" class="form-control" required>
-                                        <option value="">Select Service</option>
-                                        <option value="wedding">Wedding Photography</option>
-                                        <option value="prewedding">Pre-Wedding Shoot</option>
-                                        <option value="events">Event Photography</option>
-                                        <option value="portraits">Portrait Photography</option>
-                                    </select>
-                                </div>
-                                <div class="form-group">
-                                    <label class="form-label">Event Date *</label>
-                                    <input type="date" name="eventDate" class="form-control" required>
-                                </div>
-                                <div class="form-group">
-                                    <label class="form-label">Budget Range</label>
-                                    <select name="budget" class="form-control">
-                                        <option value="">Select Budget</option>
-                                        <option value="25000-50000">₹25,000 - ₹50,000</option>
-                                        <option value="50000-100000">₹50,000 - ₹1,00,000</option>
-                                        <option value="100000-200000">₹1,00,000 - ₹2,00,000</option>
-                                        <option value="200000+">₹2,00,000+</option>
-                                    </select>
-                                </div>
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label">Event Location</label>
-                                <input type="text" name="eventLocation" class="form-control" placeholder="Venue or City">
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label">Additional Details</label>
-                                <textarea name="message" class="form-control" rows="4" placeholder="Tell us more about your event..."></textarea>
-                            </div>
-                            <button type="submit" class="btn btn--primary btn--full-width">
-                                <span class="btn-text">Send Booking Request</span>
-                                <i class="btn-loading fas fa-spinner fa-spin"></i>
-                            </button>
-                        </form>
-                    </div>
-                    <div class="calendar-container">
-                        <div class="calendar-widget">
-                            <div class="calendar-header">
-                                <button class="calendar-nav" id="prevMonth"><i class="fas fa-chevron-left"></i></button>
-                                <h3 class="calendar-title" id="calendarTitle"></h3>
-                                <button class="calendar-nav" id="nextMonth"><i class="fas fa-chevron-right"></i></button>
-                            </div>
-                            <div class="calendar" id="calendar"></div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- Contact Section -->
-        <section id="contact" class="contact-section">
-            <div class="container">
-                <div class="contact-content">
-                    <div class="contact-info">
-                        <div class="section-header">
-                            <span class="section-label">Contact</span>
-                            <h2 class="section-title">Get In Touch</h2>
-                        </div>
-                        <div class="contact-items">
-                            <div class="contact-item">
-                                <div class="contact-icon">
-                                    <i class="fas fa-map-marker-alt"></i>
-                                </div>
-                                <div class="contact-details">
-                                    <h4>Location</h4>
-                                    <p>Thandla, Madhya Pradesh, India</p>
-                                </div>
-                            </div>
-                            <div class="contact-item">
-                                <div class="contact-icon">
-                                    <i class="fas fa-phone"></i>
-                                </div>
-                                <div class="contact-details">
-                                    <h4>Phone</h4>
-                                    <p>+91 7828720365</p>
-                                </div>
-                            </div>
-                            <div class="contact-item">
-                                <div class="contact-icon">
-                                    <i class="fas fa-envelope"></i>
-                                </div>
-                                <div class="contact-details">
-                                    <h4>Email</h4>
-                                    <p>rnstudio.x@gmail.com</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="contact-form-container">
-                        <form id="contactForm" class="contact-form">
-                            <div class="form-grid">
-                                <div class="form-group">
-                                    <input type="text" name="name" class="form-control" placeholder="Your Name" required>
-                                </div>
-                                <div class="form-group">
-                                    <input type="email" name="email" class="form-control" placeholder="Your Email" required>
-                                </div>
-                            </div>
-                            <div class="form-group">
-                                <input type="text" name="subject" class="form-control" placeholder="Subject" required>
-                            </div>
-                            <div class="form-group">
-                                <textarea name="message" class="form-control" rows="5" placeholder="Your Message" required></textarea>
-                            </div>
-                            <button type="submit" class="btn btn--primary">
-                                <span class="btn-text">Send Message</span>
-                                <i class="btn-loading fas fa-spinner fa-spin"></i>
-                            </button>
-                        </form>
-                    </div>
-                </div>
-            </div>
-        </section>
-    </main>
-
-    <!-- Service Detail Pages -->
-    <div id="servicePages" class="service-pages hidden">
-        <!-- Service pages will be generated dynamically -->
-    </div>
-
-    <!-- Blog Post Detail -->
-    <div id="blogPostDetail" class="blog-post-detail hidden">
-        <!-- Blog post content will be generated dynamically -->
-    </div>
-
-    <!-- Admin Dashboard -->
-    <div id="adminDashboard" class="admin-dashboard hidden">
-        <div class="admin-header">
-            <div class="admin-brand">
-                <h2>RN PhotoFilms Admin</h2>
-            </div>
-            <div class="admin-actions">
-                <button class="btn btn--outline" onclick="exportToGoogleSheets()">Export to Sheets</button>
-                <button class="btn btn--secondary" onclick="closeAdmin()">Close Dashboard</button>
-            </div>
-        </div>
-        <div class="admin-content">
-            <div class="admin-nav">
-                <button class="admin-nav-btn active" data-tab="overview">Overview</button>
-                <button class="admin-nav-btn" data-tab="bookings">Bookings</button>
-                <button class="admin-nav-btn" data-tab="clients">Clients</button>
-                <button class="admin-nav-btn" data-tab="analytics">Analytics</button>
-                <button class="admin-nav-btn" data-tab="team-management">Team Management</button>
-                <button class="admin-nav-btn" data-tab="attendance">Attendance</button>
-                <button class="admin-nav-btn" data-tab="finances">Finances</button>
-            </div>
-            <div class="admin-panels">
-                <div class="admin-panel active" id="overview">
-                    <!-- Overview content -->
-                </div>
-                <div class="admin-panel" id="bookings">
-                    <!-- Bookings content -->
-                </div>
-                <div class="admin-panel" id="clients">
-                    <!-- Clients content -->
-                </div>
-                <div class="admin-panel" id="analytics">
-                    <!-- Analytics content -->
-                </div>
-                <div class="admin-panel" id="team-management">
-                    <!-- Admin Team Management content -->
-                </div>
-                <div class="admin-panel" id="attendance">
-                    <!-- Attendance Management content -->
-                </div>
-                <div class="admin-panel" id="finances">
-                    <!-- Finances content -->
                 </div>
             </div>
         </div>
-    </div>
+        <div class="hero-scroll">
+            <span>Scroll to explore</span>
+            <div class="scroll-indicator"></div>
+        </div>
+    </section>
 
-    <!-- Admin Login Modal -->
-    <div id="adminLoginModal" class="modal hidden">
-        <div class="modal-overlay"></div>
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3>Admin Login</h3>
-                <button class="modal-close" onclick="closeAdminLogin()">×</button>
+    <!-- Services Section -->
+    <section id="services" class="services">
+        <div class="container">
+            <div class="section-header">
+                <h2 class="section-title">Our Services</h2>
+                <p class="section-subtitle">Professional photography services tailored to your needs</p>
             </div>
-            <form id="adminLoginForm" class="admin-login-form">
-                <div class="form-group">
-                    <input type="text" name="username" class="form-control" placeholder="Username" required>
+            <div class="services-grid" id="services-grid">
+                <!-- Services will be populated by JavaScript -->
+            </div>
+        </div>
+    </section>
+
+    <!-- Gallery Section -->
+    <section id="gallery" class="gallery">
+        <div class="container">
+            <div class="section-header">
+                <h2 class="section-title">Our Gallery</h2>
+                <p class="section-subtitle">A showcase of our finest work</p>
+            </div>
+            <div class="gallery-filters">
+                <button class="filter-btn active" data-filter="all">All</button>
+                <button class="filter-btn" data-filter="wedding">Wedding</button>
+                <button class="filter-btn" data-filter="prewedding">Pre-Wedding</button>
+                <button class="filter-btn" data-filter="events">Events</button>
+                <button class="filter-btn" data-filter="portraits">Portraits</button>
+            </div>
+            <div class="gallery-grid" id="gallery-grid">
+                <!-- Gallery images will be populated by JavaScript -->
+            </div>
+        </div>
+    </section>
+
+    <!-- Team Section -->
+    <section id="team" class="team">
+        <div class="container">
+            <div class="section-header">
+                <h2 class="section-title">Our Team</h2>
+                <p class="section-subtitle">Meet the creative minds behind every shot</p>
+            </div>
+            <div class="team-grid" id="team-grid">
+                <!-- Team members will be populated by JavaScript -->
+            </div>
+        </div>
+    </section>
+
+    <!-- Blog Section -->
+    <section id="blog" class="blog">
+        <div class="container">
+            <div class="section-header">
+                <h2 class="section-title">Latest Blog Posts</h2>
+                <p class="section-subtitle">Tips, insights, and inspiration from our photographers</p>
+            </div>
+            <div class="blog-grid" id="blog-grid">
+                <!-- Blog posts will be populated by JavaScript -->
+            </div>
+        </div>
+    </section>
+
+    <!-- Contact Section -->
+    <section id="contact" class="contact">
+        <div class="container">
+            <div class="section-header">
+                <h2 class="section-title">Get in Touch</h2>
+                <p class="section-subtitle">Ready to capture your special moments? Let's talk!</p>
+            </div>
+            <div class="contact-content">
+                <div class="contact-info">
+                    <div class="contact-item">
+                        <div class="contact-icon">📍</div>
+                        <div class="contact-details">
+                            <h4>Location</h4>
+                            <p>Thandla, Madhya Pradesh, India</p>
+                        </div>
+                    </div>
+                    <div class="contact-item">
+                        <div class="contact-icon">📞</div>
+                        <div class="contact-details">
+                            <h4>Phone</h4>
+                            <p>+91 7828720365</p>
+                        </div>
+                    </div>
+                    <div class="contact-item">
+                        <div class="contact-icon">✉️</div>
+                        <div class="contact-details">
+                            <h4>Email</h4>
+                            <p>rnstudio.x@gmail.com</p>
+                        </div>
+                    </div>
+                    <div class="contact-item">
+                        <div class="contact-icon">📸</div>
+                        <div class="contact-details">
+                            <h4>Instagram</h4>
+                            <p>@rn.photo.films</p>
+                        </div>
+                    </div>
                 </div>
-                <div class="form-group">
-                    <input type="password" name="password" class="form-control" placeholder="Password" required>
-                </div>
-                <button type="submit" class="btn btn--primary btn--full-width">Login</button>
-            </form>
-        </div>
-    </div>
-
-    <!-- Booking Edit Modal -->
-    <div id="bookingEditModal" class="modal hidden">
-        <div class="modal-overlay"></div>
-        <div class="modal-content modal-large">
-            <div class="modal-header">
-                <h3>Edit Booking</h3>
-                <button class="modal-close" onclick="closeBookingEdit()">×</button>
             </div>
-            <form id="bookingEditForm" class="booking-edit-form">
-                <!-- Form will be populated dynamically -->
-            </form>
         </div>
-    </div>
-
-    <!-- Team Member Edit Modal -->
-    <div id="teamEditModal" class="modal hidden">
-        <div class="modal-overlay"></div>
-        <div class="modal-content modal-large">
-            <div class="modal-header">
-                <h3>Edit Team Member</h3>
-                <button class="modal-close" onclick="closeTeamEdit()">×</button>
-            </div>
-            <form id="teamEditForm" class="team-edit-form">
-                <!-- Form will be populated dynamically -->
-            </form>
-        </div>
-    </div>
-
-    <!-- Gallery Lightbox -->
-    <div id="lightbox" class="lightbox hidden">
-        <div class="lightbox-overlay"></div>
-        <div class="lightbox-content">
-            <button class="lightbox-close">×</button>
-            <button class="lightbox-nav lightbox-prev"><i class="fas fa-chevron-left"></i></button>
-            <img id="lightboxImage" src="" alt="">
-            <button class="lightbox-nav lightbox-next"><i class="fas fa-chevron-right"></i></button>
-        </div>
-    </div>
+    </section>
 
     <!-- Footer -->
     <footer class="footer">
@@ -623,60 +194,453 @@
             <div class="footer-content">
                 <div class="footer-brand">
                     <h3>RN PhotoFilms</h3>
-                    <p>Your Emotions, Our Lens</p>
-                    <div class="footer-social">
-                        <a href="https://instagram.com/rn.photo.films" target="_blank"><i class="fab fa-instagram"></i></a>
-                        <a href="https://facebook.com/RNPhotoFilms" target="_blank"><i class="fab fa-facebook-f"></i></a>
-                        <a href="https://youtube.com/@rnphotofilms" target="_blank"><i class="fab fa-youtube"></i></a>
-                        <a href="#" target="_blank"><i class="fab fa-linkedin"></i></a>
-                    </div>
+                    <p>Creating timeless visual stories with passion and precision</p>
                 </div>
                 <div class="footer-links">
-                    <div class="footer-column">
-                        <h4>Services</h4>
-                        <ul>
-                            <li><a href="#" onclick="showServicePage('wedding')">Wedding Photography</a></li>
-                            <li><a href="#" onclick="showServicePage('prewedding')">Pre-Wedding Shoots</a></li>
-                            <li><a href="#" onclick="showServicePage('events')">Event Photography</a></li>
-                            <li><a href="#" onclick="showServicePage('portraits')">Portrait Photography</a></li>
-                        </ul>
-                    </div>
-                    <div class="footer-column">
+                    <div class="footer-section">
                         <h4>Quick Links</h4>
-                        <ul>
-                            <li><a href="#about">About Us</a></li>
-                            <li><a href="#gallery">Portfolio</a></li>
-                            <li><a href="#team">Team</a></li>
-                            <li><a href="#blog">Blog</a></li>
-                            <li><a href="#contact">Contact</a></li>
-                        </ul>
+                        <a href="#services">Services</a>
+                        <a href="#gallery">Gallery</a>
+                        <a href="#team">Team</a>
+                        <a href="#contact">Contact</a>
                     </div>
-                    <div class="footer-column">
-                        <h4>Contact Info</h4>
-                        <ul>
-                            <li><i class="fas fa-map-marker-alt"></i> Thandla, Madhya Pradesh</li>
-                            <li><i class="fas fa-phone"></i> +91 7828720365</li>
-                            <li><i class="fas fa-envelope"></i> rnstudio.x@gmail.com</li>
-                            <li><i class="fas fa-clock"></i> Mon-Sun 9AM-8PM</li>
-                        </ul>
+                    <div class="footer-section">
+                        <h4>Services</h4>
+                        <a href="#services">Wedding Photography</a>
+                        <a href="#services">Pre-Wedding Shoots</a>
+                        <a href="#services">Event Photography</a>
+                        <a href="#services">Portraits</a>
                     </div>
                 </div>
             </div>
             <div class="footer-bottom">
-                <p>&copy; 2024 RN PhotoFilms. All rights reserved. | Designed with ❤️ for capturing memories</p>
+                <p>&copy; 2024 RN PhotoFilms. All rights reserved.</p>
             </div>
         </div>
     </footer>
 
-    <!-- Notification Toast -->
-    <div id="toast" class="toast hidden">
-        <div class="toast-content">
-            <i class="toast-icon"></i>
-            <span class="toast-message"></span>
-            <button class="toast-close">×</button>
+    <!-- Admin Panel -->
+    <div id="admin-panel" class="admin-panel hidden">
+        <!-- Admin Login -->
+        <div id="admin-login" class="admin-section">
+            <div class="admin-login-form">
+                <h2>Admin Login</h2>
+                <form id="login-form">
+                    <div class="form-group">
+                        <label class="form-label">Email</label>
+                        <input type="email" id="admin-email" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Password</label>
+                        <input type="password" id="admin-password" class="form-control" required>
+                    </div>
+                    <button type="submit" class="btn btn--primary btn--full-width">Login</button>
+                </form>
+                <button class="admin-close" onclick="hideAdminPanel()">×</button>
+            </div>
+        </div>
+
+        <!-- Admin Dashboard -->
+        <div id="admin-dashboard" class="admin-section hidden">
+            <div class="admin-header">
+                <h1>Admin Dashboard</h1>
+                <button class="btn btn--outline" onclick="hideAdminPanel()">Close Dashboard</button>
+            </div>
+
+            <!-- Admin Navigation -->
+            <nav class="admin-nav">
+                <button class="admin-nav-btn active" data-section="overview">Dashboard</button>
+                <button class="admin-nav-btn" data-section="bookings">Bookings</button>
+                <button class="admin-nav-btn" data-section="clients">Clients</button>
+                <button class="admin-nav-btn" data-section="team-management">Team</button>
+                <button class="admin-nav-btn" data-section="analytics">Analytics</button>
+                <button class="admin-nav-btn" data-section="finance">Finance</button>
+                <button class="admin-nav-btn" data-section="crm">CRM</button>
+            </nav>
+
+            <div class="admin-content">
+                <!-- Dashboard Overview -->
+                <div id="admin-overview" class="admin-content-section active">
+                    <div class="metrics-grid" id="metrics-grid">
+                        <!-- Metrics will be populated by JavaScript -->
+                    </div>
+                    <div class="recent-bookings">
+                        <h3>Recent Bookings</h3>
+                        <div class="table-container">
+                            <table class="admin-table" id="recent-bookings-table">
+                                <!-- Table will be populated by JavaScript -->
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Bookings Management -->
+                <div id="admin-bookings" class="admin-content-section">
+                    <div class="section-actions">
+                        <h2>Booking Management</h2>
+                        <div class="action-buttons">
+                            <button class="btn btn--primary" onclick="showAddBookingForm()">Add New Booking</button>
+                            <button class="btn btn--outline" onclick="exportBookings()">Export Bookings</button>
+                        </div>
+                    </div>
+                    <div class="table-container">
+                        <table class="admin-table" id="bookings-table">
+                            <!-- Bookings table will be populated by JavaScript -->
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Clients Management -->
+                <div id="admin-clients" class="admin-content-section">
+                    <div class="section-actions">
+                        <h2>Client Management</h2>
+                        <div class="action-buttons">
+                            <button class="btn btn--primary" onclick="showAddClientForm()">Add Client</button>
+                            <button class="btn btn--outline" onclick="sendBirthdayReminders()">Birthday Reminders</button>
+                            <button class="btn btn--outline" onclick="sendAnniversaryReminders()">Anniversary Reminders</button>
+                        </div>
+                    </div>
+                    <div class="table-container">
+                        <table class="admin-table" id="clients-table">
+                            <!-- Clients table will be populated by JavaScript -->
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Team Management -->
+                <div id="admin-team-management" class="admin-content-section">
+                    <div class="section-actions">
+                        <h2>Team Management</h2>
+                        <div class="action-buttons">
+                            <button class="btn btn--primary" onclick="showAddTeamMemberForm()">Add Team Member</button>
+                            <button class="btn btn--outline" onclick="markAttendance()">Mark Attendance</button>
+                        </div>
+                    </div>
+                    <div class="team-management-grid" id="team-management-grid">
+                        <!-- Team management cards will be populated by JavaScript -->
+                    </div>
+                </div>
+
+                <!-- Analytics -->
+                <div id="admin-analytics" class="admin-content-section">
+                    <h2>Analytics</h2>
+                    <div class="analytics-grid">
+                        <div class="card">
+                            <div class="card__body">
+                                <h3>Revenue Chart</h3>
+                                <canvas id="revenue-chart" style="position: relative; height: 300px;"></canvas>
+                            </div>
+                        </div>
+                        <div class="card">
+                            <div class="card__body">
+                                <h3>Booking Trends</h3>
+                                <canvas id="bookings-chart" style="position: relative; height: 300px;"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Finance -->
+                <div id="admin-finance" class="admin-content-section">
+                    <div class="section-actions">
+                        <h2>Finance Management</h2>
+                        <div class="action-buttons">
+                            <button class="btn btn--primary" onclick="showAddExpenseForm()">Add Expense</button>
+                            <button class="btn btn--outline" onclick="generateFinanceReport()">Generate Report</button>
+                        </div>
+                    </div>
+                    <div class="finance-overview">
+                        <div class="finance-card">
+                            <h4>Total Revenue</h4>
+                            <span class="finance-amount">₹5,25,000</span>
+                        </div>
+                        <div class="finance-card">
+                            <h4>Total Expenses</h4>
+                            <span class="finance-amount">₹1,75,000</span>
+                        </div>
+                        <div class="finance-card">
+                            <h4>Net Profit</h4>
+                            <span class="finance-amount">₹3,50,000</span>
+                        </div>
+                    </div>
+                    <div class="table-container">
+                        <table class="admin-table" id="expenses-table">
+                            <!-- Expenses table will be populated by JavaScript -->
+                        </table>
+                    </div>
+                </div>
+
+                <!-- CRM -->
+                <div id="admin-crm" class="admin-content-section">
+                    <div class="section-actions">
+                        <h2>CRM System</h2>
+                        <div class="action-buttons">
+                            <button class="btn btn--primary" onclick="addLead()">Add Lead</button>
+                            <button class="btn btn--outline" onclick="setupAutomation()">Setup Automation</button>
+                            <button class="btn btn--outline" onclick="exportCRM()">Export CRM</button>
+                        </div>
+                    </div>
+                    <div class="crm-pipeline" id="crm-pipeline">
+                        <!-- CRM pipeline will be populated by JavaScript -->
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
+    <!-- Modals -->
+    <!-- Booking Form Modal -->
+    <div id="booking-modal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Book Your Session</h3>
+                <button class="modal-close" onclick="hideModal('booking-modal')">×</button>
+            </div>
+            <form id="booking-form" class="modal-form">
+                <div class="form-group">
+                    <label class="form-label">Full Name *</label>
+                    <input type="text" id="booking-name" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Email *</label>
+                    <input type="email" id="booking-email" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Phone *</label>
+                    <input type="tel" id="booking-phone" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Service Type *</label>
+                    <select id="booking-service" class="form-control" required>
+                        <option value="">Select Service</option>
+                        <option value="wedding">Wedding Photography</option>
+                        <option value="prewedding">Pre-Wedding Shoot</option>
+                        <option value="events">Event Photography</option>
+                        <option value="portraits">Portrait Photography</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Event Date</label>
+                    <input type="date" id="booking-date" class="form-control">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Package</label>
+                    <select id="booking-package" class="form-control">
+                        <option value="">Select Package</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Additional Notes</label>
+                    <textarea id="booking-notes" class="form-control" rows="3"></textarea>
+                </div>
+                <button type="submit" class="btn btn--primary btn--full-width">
+                    <span class="btn-text">Submit Booking</span>
+                    <span class="btn-loader hidden">Submitting...</span>
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Contact Form Modal -->
+    <div id="contact-modal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Get in Touch</h3>
+                <button class="modal-close" onclick="hideModal('contact-modal')">×</button>
+            </div>
+            <form id="contact-form" class="modal-form">
+                <div class="form-group">
+                    <label class="form-label">Name *</label>
+                    <input type="text" id="contact-name" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Email *</label>
+                    <input type="email" id="contact-email" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Subject</label>
+                    <input type="text" id="contact-subject" class="form-control">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Message *</label>
+                    <textarea id="contact-message" class="form-control" rows="4" required></textarea>
+                </div>
+                <button type="submit" class="btn btn--primary btn--full-width">
+                    <span class="btn-text">Send Message</span>
+                    <span class="btn-loader hidden">Sending...</span>
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Add Booking Modal -->
+    <div id="add-booking-modal" class="modal hidden">
+        <div class="modal-content modal-content--large">
+            <div class="modal-header">
+                <h3>Add New Booking</h3>
+                <button class="modal-close" onclick="hideModal('add-booking-modal')">×</button>
+            </div>
+            <form id="add-booking-form" class="modal-form">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label class="form-label">Client Name *</label>
+                        <input type="text" id="add-client-name" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Service Type *</label>
+                        <select id="add-service-type" class="form-control" required>
+                            <option value="">Select Service</option>
+                            <option value="Wedding">Wedding Photography</option>
+                            <option value="Pre-Wedding">Pre-Wedding Shoot</option>
+                            <option value="Event">Event Photography</option>
+                            <option value="Portrait">Portrait Photography</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Event Date *</label>
+                        <input type="date" id="add-event-date" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Package</label>
+                        <select id="add-package" class="form-control">
+                            <option value="">Select Package</option>
+                            <option value="Basic">Basic Package</option>
+                            <option value="Premium">Premium Package</option>
+                            <option value="Luxury">Luxury Package</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Amount *</label>
+                        <input type="number" id="add-amount" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Status</label>
+                        <select id="add-status" class="form-control">
+                            <option value="Inquiry">Inquiry</option>
+                            <option value="Confirmed">Confirmed</option>
+                            <option value="Completed">Completed</option>
+                            <option value="Cancelled">Cancelled</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Photographer</label>
+                        <select id="add-photographer" class="form-control">
+                            <option value="">Assign Photographer</option>
+                            <option value="Rakesh Baria">Rakesh Baria</option>
+                            <option value="Tushar Tank">Tushar Tank</option>
+                            <option value="Vinod Bhabhor">Vinod Bhabhor</option>
+                        </select>
+                    </div>
+                </div>
+                <button type="submit" class="btn btn--primary btn--full-width">Add Booking</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Add Client Modal -->
+    <div id="add-client-modal" class="modal hidden">
+        <div class="modal-content modal-content--large">
+            <div class="modal-header">
+                <h3>Add New Client</h3>
+                <button class="modal-close" onclick="hideModal('add-client-modal')">×</button>
+            </div>
+            <form id="add-client-form" class="modal-form">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label class="form-label">Client Name *</label>
+                        <input type="text" id="client-name" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Email *</label>
+                        <input type="email" id="client-email" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Phone *</label>
+                        <input type="tel" id="client-phone" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Address</label>
+                        <input type="text" id="client-address" class="form-control">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Event Type</label>
+                        <select id="client-event-type" class="form-control">
+                            <option value="">Select Event Type</option>
+                            <option value="Wedding">Wedding</option>
+                            <option value="Pre-Wedding">Pre-Wedding</option>
+                            <option value="Event">Event</option>
+                            <option value="Portrait">Portrait</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Birthday</label>
+                        <input type="date" id="client-birthday" class="form-control">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Anniversary</label>
+                        <input type="date" id="client-anniversary" class="form-control">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Notes</label>
+                    <textarea id="client-notes" class="form-control" rows="3"></textarea>
+                </div>
+                <button type="submit" class="btn btn--primary btn--full-width">Add Client</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Add Expense Modal -->
+    <div id="add-expense-modal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Add Expense</h3>
+                <button class="modal-close" onclick="hideModal('add-expense-modal')">×</button>
+            </div>
+            <form id="add-expense-form" class="modal-form">
+                <div class="form-group">
+                    <label class="form-label">Category *</label>
+                    <select id="expense-category" class="form-control" required>
+                        <option value="">Select Category</option>
+                        <option value="Equipment">Equipment</option>
+                        <option value="Travel">Travel</option>
+                        <option value="Marketing">Marketing</option>
+                        <option value="Office">Office Supplies</option>
+                        <option value="Software">Software</option>
+                        <option value="Other">Other</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Description *</label>
+                    <input type="text" id="expense-description" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Amount *</label>
+                    <input type="number" id="expense-amount" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Date *</label>
+                    <input type="date" id="expense-date" class="form-control" required>
+                </div>
+                <button type="submit" class="btn btn--primary btn--full-width">Add Expense</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Image Lightbox -->
+    <div id="lightbox" class="lightbox hidden">
+        <div class="lightbox-content">
+            <img id="lightbox-image" src="" alt="">
+            <button class="lightbox-close" onclick="hideLightbox()">×</button>
+            <button class="lightbox-prev" onclick="prevImage()">‹</button>
+            <button class="lightbox-next" onclick="nextImage()">›</button>
+        </div>
+    </div>
+
+    <!-- Toast Notifications -->
+    <div id="toast-container" class="toast-container"></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="app.js"></script>
 </body>
 </html>
