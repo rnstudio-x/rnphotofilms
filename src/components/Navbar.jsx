@@ -35,17 +35,17 @@ const Navbar = () => {
       >
         <div className="container mx-auto px-6 flex justify-between items-center">
           <div className="flex items-center gap-6">
-            <a href="tel:+919876543210" className="flex items-center gap-2 hover:text-gold transition-colors">
+            <a href="tel:+918239372489" className="flex items-center gap-2 hover:text-gold transition-colors">
               <FaPhone className="text-gold" />
-              +91 98765 43210
+              +91 82393 72489
             </a>
-            <a href="mailto:info@rnphotofilms.com" className="hidden md:flex items-center gap-2 hover:text-gold transition-colors">
+            <a href="mailto:rnstudio.x@gmail.com" className="hidden md:flex items-center gap-2 hover:text-gold transition-colors">
               <FaEnvelope className="text-gold" />
               info@rnphotofilms.com
             </a>
           </div>
           <div className="text-gold font-semibold">
-            10+ Years Excellence
+            4+ Years Excellence
           </div>
         </div>
       </motion.div>

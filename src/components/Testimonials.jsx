@@ -1,150 +1,147 @@
-import React, { useEffect, useRef, useState } from 'react'
-import { motion, useInView, useAnimation } from 'framer-motion'
-import { FaStar, FaQuoteLeft, FaChevronLeft, FaChevronRight } from 'react-icons/fa'
+import React, { useRef, useEffect, useState } from 'react'
+import { motion } from 'framer-motion'
+import { FaStar, FaQuoteLeft } from 'react-icons/fa'
 
-const Testimonials = () => {
-  const ref = useRef(null)
-  const isInView = useInView(ref, { once: true })
-  const controls = useAnimation()
-  const [currentIndex, setCurrentIndex] = useState(0)
+const testimonials = [
+  {
+    name: 'Priya & Rahul',
+    event: 'Wedding Photography',
+    image: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=200',
+    rating: 5,
+    text: 'RN PhotoFilms captured our wedding day beautifully! Every emotion, every moment preserved perfectly.'
+  },
+  {
+    name: 'Anjali Sharma',
+    event: 'Maternity Shoot',
+    image: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=200',
+    rating: 5,
+    text: 'The maternity shoot was incredible! They made me feel comfortable and beautiful. Highly recommended!'
+  },
+  {
+    name: 'Tech Corp India',
+    event: 'Corporate Event',
+    image: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=200',
+    rating: 5,
+    text: 'Professional, punctual, and creative. RN PhotoFilms documented our conference flawlessly.'
+  },
+  {
+    name: 'Sneha & Arjun',
+    event: 'Pre-Wedding Shoot',
+    image: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=200',
+    rating: 5,
+    text: 'Our pre-wedding shoot was magical! Beautiful locations, amazing candid moments. Thank you!'
+  },
+  {
+    name: 'Ravi Kumar',
+    event: 'Birthday Photography',
+    image: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200',
+    rating: 5,
+    text: 'They captured my daughter\'s 1st birthday perfectly. Professional team with creative ideas!'
+  },
+  {
+    name: 'Meera & Vikram',
+    event: 'Anniversary Shoot',
+    image: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200',
+    rating: 5,
+    text: 'Beautiful memories captured for our 10th anniversary. Couldn\'t be happier with the results!'
+  }
+]
 
+// Utility: duplicate testimonials for ultra-smooth loop
+const marqueeTestimonials = [...testimonials, ...testimonials]
+
+const TestimonialsAutoScroll = () => {
+  const [paused, setPaused] = useState(false)
+  const marqueeRef = useRef(null)
+
+  // Pause on hover/touch for usability
   useEffect(() => {
-    if (isInView) {
-      controls.start('visible')
+    const el = marqueeRef.current
+    if (!el) return
+    const pause = () => setPaused(true)
+    const resume = () => setPaused(false)
+    el.addEventListener('mouseenter', pause)
+    el.addEventListener('mouseleave', resume)
+    el.addEventListener('touchstart', pause)
+    el.addEventListener('touchend', resume)
+    return () => {
+      el.removeEventListener('mouseenter', pause)
+      el.removeEventListener('mouseleave', resume)
+      el.removeEventListener('touchstart', pause)
+      el.removeEventListener('touchend', resume)
     }
-  }, [isInView, controls])
-
-  const testimonials = [
-    {
-      name: 'Priya & Rahul',
-      event: 'Wedding Photography',
-      image: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=200',
-      rating: 5,
-      text: 'RN PhotoFilms captured our wedding day beautifully! Every emotion, every tear, every smile - preserved perfectly. Their team was professional, unobtrusive, and incredibly talented. We couldn\'t have asked for better photographers.'
-    },
-    {
-      name: 'Anjali Sharma',
-      event: 'Maternity Shoot',
-      image: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=200',
-      rating: 5,
-      text: 'The maternity shoot was an incredible experience. They made me feel comfortable and beautiful. The photos are stunning and capture this special time in my life perfectly. Highly recommend their services!'
-    },
-    {
-      name: 'Tech Corp India',
-      event: 'Corporate Event',
-      image: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=200',
-      rating: 5,
-      text: 'Professional, punctual, and creative. RN PhotoFilms documented our annual conference flawlessly. The photos exceeded our expectations and perfectly captured the energy of our event.'
-    },
-    {
-      name: 'Sneha & Arjun',
-      event: 'Pre-Wedding Shoot',
-      image: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=200',
-      rating: 5,
-      text: 'Our pre-wedding shoot was magical! They took us to beautiful locations and made us feel like models. The candid moments they captured are priceless. Thank you for making our shoot so memorable!'
-    },
-  ]
-
-  const nextTestimonial = () => {
-    setCurrentIndex((currentIndex + 1) % testimonials.length)
-  }
-
-  const prevTestimonial = () => {
-    setCurrentIndex((currentIndex - 1 + testimonials.length) % testimonials.length)
-  }
-
-  useEffect(() => {
-    const interval = setInterval(nextTestimonial, 5000)
-    return () => clearInterval(interval)
-  }, [currentIndex])
+  }, [])
 
   return (
-    <section id="testimonials" className="py-20 bg-blush" ref={ref}>
-      <div className="container mx-auto px-6">
-        <motion.div
-          initial="hidden"
-          animate={controls}
-          variants={{
-            hidden: { opacity: 0, y: 50 },
-            visible: { opacity: 1, y: 0, transition: { duration: 0.8 } },
-          }}
-          className="text-center mb-16"
+    <section className="relative py-10 bg-gradient-to-br from-cream via-white to-lightGrey overflow-hidden">
+      <div className="max-w-7xl mx-auto px-2">
+        <h2 className="text-center text-2xl md:text-3xl font-playfair font-bold text-charcoal mb-8 flex items-center gap-2 justify-center">
+          <FaQuoteLeft className="text-gold" />
+          Why our clients love us
+        </h2>
+
+        {/* Horizontal Marquee Carousel */}
+        <div
+          ref={marqueeRef}
+          className="relative overflow-x-hidden w-full select-none"
+          style={{ maskImage: 'linear-gradient(90deg, transparent, #fff 60%, #fff 96%, transparent)' }}
         >
-          <h2 className="text-5xl font-playfair font-bold text-charcoal mb-4">
-            Client Testimonials
-          </h2>
-          <div className="w-24 h-1 bg-gold mx-auto mb-6"></div>
-          <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-            Hear what our happy clients have to say about their experience with us
-          </p>
-        </motion.div>
-
-        <div className="relative max-w-4xl mx-auto">
-          {/* Testimonial Card */}
           <motion.div
-            key={currentIndex}
-            initial={{ opacity: 0, x: 100 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -100 }}
-            transition={{ duration: 0.5 }}
-            className="bg-white rounded-lg shadow-2xl p-8 md:p-12"
+            className="flex gap-5 items-stretch"
+            animate={{
+              x: paused ? 0 : ['0%', '-50%'],
+            }}
+            transition={{
+              duration: 32,
+              ease: 'linear',
+              repeat: Infinity,
+              repeatType: 'loop',
+            }}
           >
-            <FaQuoteLeft className="text-5xl text-gold mb-6" />
-            
-            <p className="text-lg text-gray-700 mb-8 italic leading-relaxed">
-              "{testimonials[currentIndex].text}"
-            </p>
-
-            <div className="flex items-center gap-4">
-              <img
-                src={testimonials[currentIndex].image}
-                alt={testimonials[currentIndex].name}
-                className="w-16 h-16 rounded-full object-cover border-2 border-gold"
-              />
-              <div>
-                <h4 className="text-xl font-semibold text-charcoal">
-                  {testimonials[currentIndex].name}
-                </h4>
-                <p className="text-gray-600">{testimonials[currentIndex].event}</p>
-                <div className="flex gap-1 mt-2">
-                  {[...Array(testimonials[currentIndex].rating)].map((_, i) => (
-                    <FaStar key={i} className="text-gold" />
+            {marqueeTestimonials.map((testimonial, idx) => (
+              <motion.div
+                key={idx}
+                whileHover={{
+                  scale: 1.07,
+                  y: -8,
+                  boxShadow: '0 8px 24px #f6e0aa88'
+                }}
+                className="relative min-w-[290px] max-w-sm bg-white/80 backdrop-blur-xl rounded-2xl p-4 mx-1 shadow-md border border-gold/10 cursor-pointer"
+              >
+                {/* Avatar + name/event */}
+                <div className="flex items-center gap-3 mb-2">
+                  <img
+                    src={testimonial.image}
+                    alt={testimonial.name}
+                    className="w-12 h-12 rounded-full object-cover border-2 border-gold shadow"
+                    loading="lazy"
+                  />
+                  <div>
+                    <div className="font-bold text-charcoal">{testimonial.name}</div>
+                    <div className="text-xs text-gold">{testimonial.event}</div>
+                  </div>
+                </div>
+                {/* Text */}
+                <div className="italic text-gray-700 mt-2 mb-2 text-sm">
+                  "{testimonial.text}"
+                </div>
+                {/* Star rating */}
+                <div className="flex gap-1 mt-3">
+                  {[...Array(testimonial.rating)].map((_, i) => (
+                    <FaStar className="text-yellow-400 text-xs" key={i} />
                   ))}
                 </div>
-              </div>
-            </div>
-          </motion.div>
-
-          {/* Navigation Buttons */}
-          <button
-            onClick={prevTestimonial}
-            className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-4 md:-translate-x-12 bg-gold text-white p-4 rounded-full hover:bg-opacity-90 transition-all"
-          >
-            <FaChevronLeft />
-          </button>
-          <button
-            onClick={nextTestimonial}
-            className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-4 md:translate-x-12 bg-gold text-white p-4 rounded-full hover:bg-opacity-90 transition-all"
-          >
-            <FaChevronRight />
-          </button>
-
-          {/* Indicators */}
-          <div className="flex justify-center gap-2 mt-8">
-            {testimonials.map((_, index) => (
-              <button
-                key={index}
-                onClick={() => setCurrentIndex(index)}
-                className={`w-3 h-3 rounded-full transition-all ${
-                  index === currentIndex ? 'bg-gold w-8' : 'bg-gray-300'
-                }`}
-              />
+              </motion.div>
             ))}
-          </div>
+          </motion.div>
+        </div>
+        {/* Note/CTA below */}
+        <div className="text-center mt-5 text-sm text-gray-500">
+          <span>Hover or tap to pause scrolling</span>
         </div>
       </div>
     </section>
   )
 }
 
-export default Testimonials
+export default TestimonialsAutoScroll
