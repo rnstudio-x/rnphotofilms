@@ -1,10 +1,15 @@
 import React, { useState, useEffect } from 'react'
+import { useLocation } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { FaBars, FaTimes, FaPhone, FaEnvelope } from 'react-icons/fa'
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false)
   const [scrolled, setScrolled] = useState(false)
+  const location = useLocation()
+
+  // Hide navbar on CRM pages
+  const isCRMPage = location.pathname.includes('/crm')
 
   useEffect(() => {
     const handleScroll = () => {
@@ -24,6 +29,12 @@ const Navbar = () => {
     { name: 'Contact', href: '#contact' },
   ]
 
+  // Don't render navbar on CRM pages
+  if (isCRMPage) {
+    return null
+  }
+
+ 
   return (
     <>
       {/* Top Info Bar - Optional but eye-catching */}
@@ -239,5 +250,3 @@ const Navbar = () => {
     </>
   )
 }
-
-export default Navbar
