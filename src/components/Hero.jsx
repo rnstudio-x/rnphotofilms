@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
+import BookingForm from './BookingForm'
 
 const TypewriterMorphHero = () => {
   const [textIndex, setTextIndex] = useState(0)
   const [charIndex, setCharIndex] = useState(0)
+  const [isBookingOpen, setIsBookingOpen] = useState(false)
 
   const categories = [
     { 
@@ -164,7 +166,7 @@ const TypewriterMorphHero = () => {
             </motion.a>
 
             <motion.a
-              href="#booking"
+             onClick={() => setIsBookingOpen(true)}
               whileHover={{ 
                 scale: 1.08,
                 backgroundColor: 'rgba(255,255,255,1)',
@@ -261,7 +263,12 @@ const TypewriterMorphHero = () => {
         transition={{ duration: 10, repeat: Infinity }}
         className="absolute bottom-32 right-10 w-40 h-40 bg-teal/20 rounded-full blur-3xl"
       />
+            <BookingForm 
+        isOpen={isBookingOpen} 
+        onClose={() => setIsBookingOpen(false)} 
+      />
     </section>
+    
   )
 }
 

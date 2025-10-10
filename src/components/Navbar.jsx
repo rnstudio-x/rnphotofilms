@@ -2,11 +2,13 @@ import React, { useState, useEffect } from 'react'
 import { useLocation } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { FaBars, FaTimes, FaPhone, FaEnvelope } from 'react-icons/fa'
+import BookingForm from './BookingForm'
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false)
   const [scrolled, setScrolled] = useState(false)
   const location = useLocation()
+  const [isBookingOpen, setIsBookingOpen] = useState(false)
 
   // Hide navbar on CRM pages
   const isCRMPage = location.pathname.includes('/crm')
@@ -126,7 +128,7 @@ const Navbar = () => {
               
               {/* Book Now Button - Eye-catching */}
               <motion.a
-                href="#booking"
+                onClick={() => setIsBookingOpen(true)}
                 initial={{ scale: 0 }}
                 animate={{ scale: 1 }}
                 transition={{ delay: 0.8, type: 'spring' }}
@@ -221,11 +223,13 @@ const Navbar = () => {
               </div>
 
               <motion.a
-                href="#booking"
                 initial={{ opacity: 0, y: 50 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.8 }}
-                onClick={() => setIsOpen(false)}
+                onClick={() => {
+                setIsOpen(false) // Close mobile menu
+                setIsBookingOpen(true) // Open booking modal
+              }}
                 className="bg-gold text-white px-8 py-4 rounded-full font-semibold text-center shadow-lg"
               >
                 Book Now
@@ -247,6 +251,11 @@ const Navbar = () => {
           />
         )}
       </AnimatePresence>
+      <BookingForm 
+        isOpen={isBookingOpen} 
+        onClose={() => setIsBookingOpen(false)} 
+      />
     </>
   )
 }
+export default Navbar

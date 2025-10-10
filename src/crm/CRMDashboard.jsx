@@ -11,6 +11,7 @@ import {
 import Dashboard from './Components/Dashboard'
 import LeadsManager from './Components/LeadsManager'
 import EventsManager from './Components/EventsManager'
+import PaymentTracker from './Components/PaymentTracker'
 import PhotographersManager from './Components/PhotographersManager'
 import AttendanceTracker from './Components/AttendanceTracker'
 import ExpensesManager from './Components/ExpensesManager'
@@ -40,6 +41,7 @@ const CRMDashboard = () => {
     { id: 'dashboard', label: 'Dashboard', icon: <FaTachometerAlt />, path: '/crm' },
     { id: 'leads', label: 'Leads', icon: <FaUsers />, path: '/crm/leads', badge: 5 },
     { id: 'events', label: 'Events', icon: <FaCalendarAlt />, path: '/crm/events' },
+    { id: 'payments', label: 'Payments', icon: <FaMoneyBillWave />, path: '/crm/payments' },
     { id: 'photographers', label: 'Photographers', icon: <FaUserTie />, path: '/crm/photographers' },
     { id: 'attendance', label: 'Attendance', icon: <FaClipboardCheck />, path: '/crm/attendance' },
     { id: 'expenses', label: 'Expenses', icon: <FaMoneyBillWave />, path: '/crm/expenses' },
@@ -299,6 +301,7 @@ const CRMDashboard = () => {
             <Route path="/" element={<Dashboard />} />
             <Route path="/leads" element={<LeadsManager />} />
             <Route path="/events" element={<EventsManager />} />
+            <Route path="/payments" element={<PaymentTracker />} />
             <Route path="/photographers" element={<PhotographersManager />} />
             <Route path="/attendance" element={<AttendanceTracker />} />
             <Route path="/expenses" element={<ExpensesManager />} />
