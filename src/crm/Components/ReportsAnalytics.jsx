@@ -37,7 +37,7 @@ const ReportsAnalytics = () => {
     sourceAnalysis: {}
   })
 
-  const GAS_URL = 'https://script.google.com/macros/s/AKfycbwKBxSj_Qb0_Zoo4OZ7EA9tlZhGBRjXfoCwGpmwUFqKhLxV52AcTUmwzkgfecOc3ZT8dg/exec'
+  const GAS_URL = 'https://script.google.com/macros/s/AKfycbzX0rollFXcrI5d8qKhWlLslCX71JDSnlwAVtLLsqmDze2Jhi9_FbpMg-wIvELxe83fZQ/exec'
 
   useEffect(() => {
     fetchAnalyticsData()

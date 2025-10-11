@@ -65,7 +65,7 @@ function App() {
       <Routes>
         {/* Main Website Route */}
         <Route 
-          path="/" 
+          path="/rnphotofilms" 
           element={<MainWebsite setSelectedBlogPost={setSelectedBlogPost} />} 
         />
 
