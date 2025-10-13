@@ -22,7 +22,7 @@ const Dashboard = () => {
   const [upcomingEvents, setUpcomingEvents] = useState([])
   const [loading, setLoading] = useState(true)
 
-  const GAS_URL = 'https://script.google.com/macros/s/AKfycbzX0rollFXcrI5d8qKhWlLslCX71JDSnlwAVtLLsqmDze2Jhi9_FbpMg-wIvELxe83fZQ/exec' // Replace with your actual URL
+  const GAS_URL = 'https://script.google.com/macros/s/AKfycbzYVCIDlUljIZq96CG_YuxWjPL7cS-yHWZxXibNwF8O0lzAIfKgj8QNrFs6cfGoCpuFqg/exec' // Replace with your actual URL
 
   useEffect(() => {
     fetchDashboardData()

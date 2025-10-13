@@ -1,108 +1,139 @@
 import React, { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import {
-  FaMoneyBillWave, FaCheckCircle, FaExclamationTriangle, FaClock,
-  FaSearch, FaFilter, FaPlus, FaEye, FaDownload, FaReceipt,
-  FaCreditCard, FaUniversity, FaMobileAlt, FaWallet, FaHistory,
-  FaChartLine, FaUser, FaCalendar, FaTimes
+import { 
+  FaMoneyBillWave, FaCheckCircle, FaExclamationTriangle, FaClock, FaSearch, 
+  FaFilter, FaPlus, FaEye, FaDownload, FaReceipt, FaCreditCard, FaUniversity, 
+  FaMobileAlt, FaWallet, FaHistory, FaChartLine, FaUser, FaCalendar, FaTimes,
+  FaEdit, FaTrash, FaBell, FaFileInvoice, FaPrint
 } from 'react-icons/fa'
 
 const PaymentTracker = () => {
+  // State Management
   const [leads, setLeads] = useState([])
+  const [payments, setPayments] = useState([])
   const [filteredLeads, setFilteredLeads] = useState([])
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
   const [statusFilter, setStatusFilter] = useState('All')
   const [selectedLead, setSelectedLead] = useState(null)
-  const [isModalOpen, setIsModalOpen] = useState(false)
-  const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false)
+  const [selectedPayments, setSelectedPayments] = useState([])
   
+  // Modal States
+  const [isViewModalOpen, setIsViewModalOpen] = useState(false)
+  const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false)
+  const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false)
+  
+  // Payment Form State
+  const [paymentForm, setPaymentForm] = useState({
+    amount: '',
+    paymentType: 'Advance',
+    paymentMethod: 'UPI',
+    paymentDate: new Date().toISOString().split('T')[0],
+    transactionId: '',
+    notes: ''
+  })
+
   const [stats, setStats] = useState({
     totalRevenue: 0,
-    advanceReceived: 0,
-    balancePending: 0,
+    totalReceived: 0,
+    totalPending: 0,
     fullyPaid: 0,
-    pendingAdvance: 0,
+    partialPaid: 0,
+    noPaid: 0,
     overduePayments: 0
   })
 
-  const GAS_URL = 'https://script.google.com/macros/s/AKfycbzX0rollFXcrI5d8qKhWlLslCX71JDSnlwAVtLLsqmDze2Jhi9_FbpMg-wIvELxe83fZQ/exec' // Replace with your actual URL
+  const GAS_URL = 'https://script.google.com/macros/s/AKfycbzYVCIDlUljIZq96CG_YuxWjPL7cS-yHWZxXibNwF8O0lzAIfKgj8QNrFs6cfGoCpuFqg/exec'
 
+  // Fetch Data
   useEffect(() => {
-    fetchPaymentData()
+    fetchAllData()
   }, [])
 
   useEffect(() => {
     applyFilters()
-  }, [leads, searchTerm, statusFilter])
+  }, [leads, payments, searchTerm, statusFilter])
 
-  const fetchPaymentData = async () => {
+  const fetchAllData = async () => {
     try {
       setLoading(true)
-      const response = await fetch(GAS_URL, {
+      
+      // Fetch Leads
+      const leadsResponse = await fetch(GAS_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'text/plain' },
         body: JSON.stringify({ action: 'getLeads' })
       })
-
-      const result = await response.json()
+      const leadsResult = await leadsResponse.json()
       
-      if (result.success && result.leads) {
+      // Fetch Payments
+      const paymentsResponse = await fetch(GAS_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain' },
+        body: JSON.stringify({ action: 'getPayments' })
+      })
+      const paymentsResult = await paymentsResponse.json()
+
+      if (leadsResult.success && leadsResult.leads) {
         // Only show converted or event completed leads
-        const paymentLeads = result.leads.filter(lead => 
+        const paymentLeads = leadsResult.leads.filter(lead => 
           lead.Status === 'Converted' || lead.Status === 'Event Completed'
         )
         setLeads(paymentLeads)
-        calculateStats(paymentLeads)
       }
+
+      if (paymentsResult.success && paymentsResult.payments) {
+        setPayments(paymentsResult.payments)
+      }
+
+      calculateStats(leadsResult.leads || [], paymentsResult.payments || [])
     } catch (error) {
-      console.error('Error fetching payment data:', error)
+      console.error('Error fetching data:', error)
     } finally {
       setLoading(false)
     }
   }
 
-  const calculateStats = (leadsData) => {
+  const calculateStats = (leadsData, paymentsData) => {
     const stats = {
       totalRevenue: 0,
-      advanceReceived: 0,
-      balancePending: 0,
+      totalReceived: 0,
+      totalPending: 0,
       fullyPaid: 0,
-      pendingAdvance: 0,
+      partialPaid: 0,
+      noPaid: 0,
       overduePayments: 0
     }
 
     leadsData.forEach(lead => {
-      // Calculate total revenue from budget
+      if (lead.Status !== 'Converted' && lead.Status !== 'Event Completed') return
+
       const budget = parseBudget(lead.Budget)
       if (budget > 0) {
         stats.totalRevenue += budget
       }
 
-      // Calculate advance (15% of budget)
-      const advanceAmount = budget * 0.15
-      const balanceAmount = budget * 0.85
+      // Get all payments for this lead
+      const leadPayments = paymentsData.filter(p => p.leadId === lead.id)
+      const totalPaid = leadPayments.reduce((sum, p) => sum + parseFloat(p.amount || 0), 0)
 
-      // Check advance status
-      if (lead['Advance Paid'] === 'TRUE' || lead['Advance Paid'] === true) {
-        stats.advanceReceived += advanceAmount
+      stats.totalReceived += totalPaid
+      stats.totalPending += (budget - totalPaid)
+
+      // Categorize payment status
+      if (totalPaid >= budget) {
+        stats.fullyPaid++
+      } else if (totalPaid > 0) {
+        stats.partialPaid++
       } else {
-        stats.pendingAdvance += advanceAmount
+        stats.noPaid++
       }
 
-      // Check balance status
-      if (lead['Balance Paid'] === 'TRUE' || lead['Balance Paid'] === true) {
-        stats.fullyPaid++
-      } else {
-        stats.balancePending += balanceAmount
-        
-        // Check if overdue (balance due date passed)
-        if (lead['Balance Due Date']) {
-          const dueDate = new Date(lead['Balance Due Date'])
-          const today = new Date()
-          if (dueDate < today) {
-            stats.overduePayments++
-          }
+      // Check overdue
+      if (lead['Balance Due Date'] && totalPaid < budget) {
+        const dueDate = new Date(lead['Balance Due Date'])
+        if (dueDate < new Date()) {
+          stats.overduePayments++
         }
       }
     })
@@ -110,16 +141,12 @@ const PaymentTracker = () => {
     setStats(stats)
   }
 
-const parseBudget = (budgetString) => {
-  if (!budgetString) return 0
-  
-  // Convert to string if it's not
-  const budgetStr = String(budgetString)
-  
-  // Remove ₹, commas, and parse as number
-  const cleaned = budgetStr.replace(/[₹,]/g, '').trim()
-  return parseFloat(cleaned) || 0
-}
+  const parseBudget = (budgetString) => {
+    if (!budgetString) return 0
+    const budgetStr = String(budgetString)
+    const cleaned = budgetStr.replace(/[₹,]/g, '').trim()
+    return parseFloat(cleaned) || 0
+  }
 
   const applyFilters = () => {
     let filtered = leads
@@ -136,20 +163,21 @@ const parseBudget = (budgetString) => {
     // Status filter
     if (statusFilter !== 'All') {
       filtered = filtered.filter(lead => {
-        const advancePaid = lead['Advance Paid'] === 'TRUE' || lead['Advance Paid'] === true
-        const balancePaid = lead['Balance Paid'] === 'TRUE' || lead['Balance Paid'] === true
+        const budget = parseBudget(lead.Budget)
+        const leadPayments = payments.filter(p => p.leadId === lead.id)
+        const totalPaid = leadPayments.reduce((sum, p) => sum + parseFloat(p.amount || 0), 0)
 
         switch (statusFilter) {
           case 'Fully Paid':
-            return advancePaid && balancePaid
-          case 'Advance Paid':
-            return advancePaid && !balancePaid
+            return totalPaid >= budget
+          case 'Partial Paid':
+            return totalPaid > 0 && totalPaid < budget
           case 'Pending':
-            return !advancePaid || !balancePaid
+            return totalPaid === 0
           case 'Overdue':
             if (!lead['Balance Due Date']) return false
             const dueDate = new Date(lead['Balance Due Date'])
-            return dueDate < new Date() && !balancePaid
+            return dueDate < new Date() && totalPaid < budget
           default:
             return true
         }
@@ -159,28 +187,122 @@ const parseBudget = (budgetString) => {
     setFilteredLeads(filtered)
   }
 
-  const getPaymentStatus = (lead) => {
-    const advancePaid = lead['Advance Paid'] === 'TRUE' || lead['Advance Paid'] === true
-    const balancePaid = lead['Balance Paid'] === 'TRUE' || lead['Balance Paid'] === true
+  const getPaymentSummary = (lead) => {
+    const budget = parseBudget(lead.Budget)
+    const leadPayments = payments.filter(p => p.leadId === lead.id)
+    const totalPaid = leadPayments.reduce((sum, p) => sum + parseFloat(p.amount || 0), 0)
+    const pending = budget - totalPaid
 
-    if (advancePaid && balancePaid) {
-      return { label: 'Fully Paid', color: 'bg-green-100 text-green-800', icon: FaCheckCircle }
-    } else if (advancePaid && !balancePaid) {
-      // Check if overdue
-      if (lead['Balance Due Date']) {
-        const dueDate = new Date(lead['Balance Due Date'])
-        if (dueDate < new Date()) {
-          return { label: 'Overdue', color: 'bg-red-100 text-red-800', icon: FaExclamationTriangle }
-        }
-      }
-      return { label: 'Balance Pending', color: 'bg-yellow-100 text-yellow-800', icon: FaClock }
+    let status, color, icon
+
+    if (totalPaid >= budget) {
+      status = 'Fully Paid'
+      color = 'bg-green-100 text-green-800'
+      icon = FaCheckCircle
+    } else if (totalPaid > 0) {
+      status = 'Partial Paid'
+      color = 'bg-yellow-100 text-yellow-800'
+      icon = FaClock
     } else {
-      return { label: 'Advance Pending', color: 'bg-orange-100 text-orange-800', icon: FaExclamationTriangle }
+      status = 'Pending'
+      color = 'bg-red-100 text-red-800'
+      icon = FaExclamationTriangle
+    }
+
+    // Check overdue
+    if (lead['Balance Due Date'] && totalPaid < budget) {
+      const dueDate = new Date(lead['Balance Due Date'])
+      if (dueDate < new Date()) {
+        status = 'Overdue'
+        color = 'bg-red-100 text-red-800'
+        icon = FaExclamationTriangle
+      }
+    }
+
+    return {
+      budget,
+      totalPaid,
+      pending,
+      status,
+      color,
+      icon,
+      paymentCount: leadPayments.length
     }
   }
 
+  const handleAddPayment = async () => {
+    if (!selectedLead || !paymentForm.amount) {
+      alert('Please fill all required fields')
+      return
+    }
+
+    try {
+      const response = await fetch(GAS_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain' },
+        body: JSON.stringify({
+          action: 'addPayment',
+          leadId: selectedLead.id,
+          clientName: selectedLead['Client Name'],
+          amount: parseFloat(paymentForm.amount),
+          paymentType: paymentForm.paymentType,
+          paymentMethod: paymentForm.paymentMethod,
+          paymentDate: paymentForm.paymentDate,
+          transactionId: paymentForm.transactionId,
+          notes: paymentForm.notes
+        })
+      })
+
+      const result = await response.json()
+
+      if (result.success) {
+        alert('Payment added successfully!')
+        setIsPaymentModalOpen(false)
+        resetPaymentForm()
+        fetchAllData()
+      } else {
+        alert('Error: ' + result.message)
+      }
+    } catch (error) {
+      console.error('Error adding payment:', error)
+      alert('Failed to add payment')
+    }
+  }
+
+  const resetPaymentForm = () => {
+    setPaymentForm({
+      amount: '',
+      paymentType: 'Advance',
+      paymentMethod: 'UPI',
+      paymentDate: new Date().toISOString().split('T')[0],
+      transactionId: '',
+      notes: ''
+    })
+  }
+
+  const openPaymentModal = (lead) => {
+    setSelectedLead(lead)
+    const summary = getPaymentSummary(lead)
+    
+    // Auto-fill suggested amount (remaining balance)
+    setPaymentForm({
+      ...paymentForm,
+      amount: summary.pending > 0 ? summary.pending.toString() : '',
+      paymentType: summary.totalPaid === 0 ? 'Advance' : 'Balance'
+    })
+    
+    setIsPaymentModalOpen(true)
+  }
+
+  const openHistoryModal = (lead) => {
+    setSelectedLead(lead)
+    const leadPayments = payments.filter(p => p.leadId === lead.id)
+    setSelectedPayments(leadPayments)
+    setIsHistoryModalOpen(true)
+  }
+
   const formatCurrency = (amount) => {
-    return '₹' + amount.toLocaleString('en-IN')
+    return '₹' + parseFloat(amount).toLocaleString('en-IN')
   }
 
   const formatDate = (dateString) => {
@@ -192,436 +314,500 @@ const parseBudget = (budgetString) => {
     })
   }
 
+  const getPaymentMethodIcon = (method) => {
+    switch (method) {
+      case 'UPI': return <FaMobileAlt />
+      case 'Cash': return <FaWallet />
+      case 'Card': return <FaCreditCard />
+      case 'Bank Transfer': return <FaUniversity />
+      default: return <FaMoneyBillWave />
+    }
+  }
+
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center">
+      <div className="flex items-center justify-center h-screen">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600 text-lg">Loading payment data...</p>
+          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading payment data...</p>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-6">
-      <div className="max-w-7xl mx-auto">
-        
-        {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-4xl font-bold text-gray-800 mb-2">Payment Tracker</h1>
-          <p className="text-gray-600">Manage payments, track dues, and monitor revenue</p>
-        </div>
-
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-6 mb-8">
-          
-          {/* Total Revenue */}
-          <motion.div
-            whileHover={{ scale: 1.05 }}
-            className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl shadow-xl p-6 text-white col-span-2"
-          >
-            <div className="flex items-center justify-between mb-2">
-              <FaChartLine className="text-3xl opacity-80" />
-              <span className="text-sm bg-white/20 px-2 py-1 rounded-full">Total</span>
-            </div>
-            <p className="text-blue-100 text-sm mb-1">Total Revenue</p>
-            <h3 className="text-3xl font-bold">{formatCurrency(stats.totalRevenue)}</h3>
-          </motion.div>
-
-          {/* Advance Received */}
-          <motion.div
-            whileHover={{ scale: 1.05 }}
-            className="bg-gradient-to-br from-green-500 to-green-600 rounded-xl shadow-xl p-6 text-white col-span-2"
-          >
-            <div className="flex items-center justify-between mb-2">
-              <FaCheckCircle className="text-3xl opacity-80" />
-              <span className="text-sm bg-white/20 px-2 py-1 rounded-full">Received</span>
-            </div>
-            <p className="text-green-100 text-sm mb-1">Advance Received</p>
-            <h3 className="text-3xl font-bold">{formatCurrency(stats.advanceReceived)}</h3>
-          </motion.div>
-
-          {/* Balance Pending */}
-          <motion.div
-            whileHover={{ scale: 1.05 }}
-            className="bg-gradient-to-br from-orange-500 to-orange-600 rounded-xl shadow-xl p-6 text-white col-span-2"
-          >
-            <div className="flex items-center justify-between mb-2">
-              <FaClock className="text-3xl opacity-80" />
-              <span className="text-sm bg-white/20 px-2 py-1 rounded-full">Pending</span>
-            </div>
-            <p className="text-orange-100 text-sm mb-1">Balance Pending</p>
-            <h3 className="text-3xl font-bold">{formatCurrency(stats.balancePending)}</h3>
-          </motion.div>
-
-          {/* Fully Paid Count */}
-          <motion.div
-            whileHover={{ scale: 1.05 }}
-            className="bg-white rounded-xl shadow-lg p-6 border-l-4 border-green-500"
-          >
-            <p className="text-gray-500 text-sm mb-1">Fully Paid</p>
-            <h3 className="text-3xl font-bold text-gray-800">{stats.fullyPaid}</h3>
-            <p className="text-xs text-gray-500 mt-1">Clients</p>
-          </motion.div>
-
-          {/* Pending Advance */}
-          <motion.div
-            whileHover={{ scale: 1.05 }}
-            className="bg-white rounded-xl shadow-lg p-6 border-l-4 border-yellow-500"
-          >
-            <p className="text-gray-500 text-sm mb-1">Pending Advance</p>
-            <h3 className="text-3xl font-bold text-gray-800">{formatCurrency(stats.pendingAdvance)}</h3>
-            <p className="text-xs text-gray-500 mt-1">To collect</p>
-          </motion.div>
-
-          {/* Overdue Payments */}
-          <motion.div
-            whileHover={{ scale: 1.05 }}
-            className="bg-white rounded-xl shadow-lg p-6 border-l-4 border-red-500"
-          >
-            <p className="text-gray-500 text-sm mb-1">Overdue</p>
-            <h3 className="text-3xl font-bold text-red-600">{stats.overduePayments}</h3>
-            <p className="text-xs text-gray-500 mt-1">Payments</p>
-          </motion.div>
-
-        </div>
-
-        {/* Filters & Search */}
-        <div className="bg-white rounded-xl shadow-lg p-6 mb-8">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            
-            {/* Search */}
-            <div className="relative">
-              <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-              <input
-                type="text"
-                placeholder="Search by name, phone, email..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
-            </div>
-
-            {/* Status Filter */}
-            <div className="relative">
-              <FaFilter className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-              <select
-                value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value)}
-                className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none"
-              >
-                <option value="All">All Status</option>
-                <option value="Fully Paid">Fully Paid</option>
-                <option value="Advance Paid">Advance Paid Only</option>
-                <option value="Pending">Any Pending</option>
-                <option value="Overdue">Overdue</option>
-              </select>
-            </div>
-
-            {/* Refresh Button */}
-            <button
-              onClick={fetchPaymentData}
-              className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors"
-            >
-              Refresh Data
-            </button>
-          </div>
-        </div>
-
-        {/* Payments Table */}
-        <div className="bg-white rounded-xl shadow-lg overflow-hidden">
-          {filteredLeads.length === 0 ? (
-            <div className="text-center py-20">
-              <FaMoneyBillWave className="text-6xl text-gray-300 mx-auto mb-4" />
-              <p className="text-gray-500 text-lg">No payment records found</p>
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">Client</th>
-                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">Event</th>
-                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">Total Amount</th>
-                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">Advance (15%)</th>
-                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">Balance (85%)</th>
-                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">Status</th>
-                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-200">
-                  {filteredLeads.map((lead, index) => {
-                    const budget = parseBudget(lead.Budget)
-                    const advanceAmount = budget * 0.15
-                    const balanceAmount = budget * 0.85
-                    const status = getPaymentStatus(lead)
-                    const StatusIcon = status.icon
-
-                    return (
-                      <motion.tr
-                        key={lead['Lead ID'] || index}
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: index * 0.05 }}
-                        className="hover:bg-gray-50 transition-colors"
-                      >
-                        <td className="px-6 py-4">
-                          <div>
-                            <p className="font-semibold text-gray-800">{lead['Client Name']}</p>
-                            <p className="text-sm text-gray-500">{lead.Phone}</p>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4">
-                          <p className="font-medium text-gray-800">{lead['Event Type']}</p>
-                          <p className="text-sm text-gray-500">{formatDate(lead['Event Date'])}</p>
-                        </td>
-                        <td className="px-6 py-4">
-                          <p className="font-bold text-gray-800">{formatCurrency(budget)}</p>
-                        </td>
-                        <td className="px-6 py-4">
-                          <p className="font-medium text-gray-800">{formatCurrency(advanceAmount)}</p>
-                          {(lead['Advance Paid'] === 'TRUE' || lead['Advance Paid'] === true) && (
-                            <span className="flex items-center gap-1 text-xs text-green-600 mt-1">
-                              <FaCheckCircle /> Paid
-                            </span>
-                          )}
-                        </td>
-                        <td className="px-6 py-4">
-                          <p className="font-medium text-gray-800">{formatCurrency(balanceAmount)}</p>
-                          {(lead['Balance Paid'] === 'TRUE' || lead['Balance Paid'] === true) ? (
-                            <span className="flex items-center gap-1 text-xs text-green-600 mt-1">
-                              <FaCheckCircle /> Paid
-                            </span>
-                          ) : lead['Balance Due Date'] && (
-                            <span className="text-xs text-gray-500 mt-1">
-                              Due: {formatDate(lead['Balance Due Date'])}
-                            </span>
-                          )}
-                        </td>
-                        <td className="px-6 py-4">
-                          <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold ${status.color}`}>
-                            <StatusIcon /> {status.label}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4">
-                          <button
-                            onClick={() => {
-                              setSelectedLead(lead)
-                              setIsModalOpen(true)
-                            }}
-                            className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                            title="View Details"
-                          >
-                            <FaEye />
-                          </button>
-                        </td>
-                      </motion.tr>
-                    )
-                  })}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
-
+    <div className="p-6 bg-gray-50 min-h-screen">
+      {/* Header */}
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold text-gray-800 mb-2 flex items-center gap-3">
+          <FaMoneyBillWave className="text-blue-600" />
+          Payment Tracker
+        </h1>
+        <p className="text-gray-600">Manage payments, track dues, and monitor revenue</p>
       </div>
 
-      {/* Payment Detail Modal */}
+      {/* Statistics Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl p-6 text-white shadow-lg"
+        >
+          <div className="flex items-center justify-between mb-2">
+            <FaChartLine className="text-3xl opacity-80" />
+            <span className="text-sm font-medium bg-white/20 px-3 py-1 rounded-full">Total</span>
+          </div>
+          <h3 className="text-2xl font-bold mb-1">{formatCurrency(stats.totalRevenue)}</h3>
+          <p className="text-blue-100 text-sm">Total Revenue</p>
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+          className="bg-gradient-to-br from-green-500 to-green-600 rounded-xl p-6 text-white shadow-lg"
+        >
+          <div className="flex items-center justify-between mb-2">
+            <FaCheckCircle className="text-3xl opacity-80" />
+            <span className="text-sm font-medium bg-white/20 px-3 py-1 rounded-full">Received</span>
+          </div>
+          <h3 className="text-2xl font-bold mb-1">{formatCurrency(stats.totalReceived)}</h3>
+          <p className="text-green-100 text-sm">{stats.fullyPaid} Fully Paid</p>
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+          className="bg-gradient-to-br from-orange-500 to-orange-600 rounded-xl p-6 text-white shadow-lg"
+        >
+          <div className="flex items-center justify-between mb-2">
+            <FaClock className="text-3xl opacity-80" />
+            <span className="text-sm font-medium bg-white/20 px-3 py-1 rounded-full">Pending</span>
+          </div>
+          <h3 className="text-2xl font-bold mb-1">{formatCurrency(stats.totalPending)}</h3>
+          <p className="text-orange-100 text-sm">{stats.partialPaid} Partial + {stats.noPaid} Unpaid</p>
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3 }}
+          className="bg-gradient-to-br from-red-500 to-red-600 rounded-xl p-6 text-white shadow-lg"
+        >
+          <div className="flex items-center justify-between mb-2">
+            <FaExclamationTriangle className="text-3xl opacity-80" />
+            <span className="text-sm font-medium bg-white/20 px-3 py-1 rounded-full">Alert</span>
+          </div>
+          <h3 className="text-2xl font-bold mb-1">{stats.overduePayments}</h3>
+          <p className="text-red-100 text-sm">Overdue Payments</p>
+        </motion.div>
+      </div>
+
+      {/* Filters */}
+      <div className="bg-white rounded-xl shadow-md p-6 mb-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="relative">
+            <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+            <input
+              type="text"
+              placeholder="Search by client name, phone, or email..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            />
+          </div>
+
+          <div className="relative">
+            <FaFilter className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none"
+            >
+              <option value="All">All Payments</option>
+              <option value="Fully Paid">Fully Paid</option>
+              <option value="Partial Paid">Partial Paid</option>
+              <option value="Pending">Pending</option>
+              <option value="Overdue">Overdue</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      {/* Payment Table */}
+      <div className="bg-white rounded-xl shadow-md overflow-hidden">
+        {filteredLeads.length === 0 ? (
+          <div className="text-center py-12">
+            <FaMoneyBillWave className="text-6xl text-gray-300 mx-auto mb-4" />
+            <p className="text-gray-500 text-lg">No payment records found</p>
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-gray-50 border-b border-gray-200">
+                <tr>
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Client</th>
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Event</th>
+                  <th className="px-6 py-4 text-right text-xs font-semibold text-gray-600 uppercase tracking-wider">Total Amount</th>
+                  <th className="px-6 py-4 text-right text-xs font-semibold text-gray-600 uppercase tracking-wider">Paid</th>
+                  <th className="px-6 py-4 text-right text-xs font-semibold text-gray-600 uppercase tracking-wider">Pending</th>
+                  <th className="px-6 py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">Status</th>
+                  <th className="px-6 py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-200">
+                {filteredLeads.map((lead, index) => {
+                  const summary = getPaymentSummary(lead)
+                  const StatusIcon = summary.icon
+
+                  return (
+                    <motion.tr
+                      key={lead.id || index}
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      transition={{ delay: index * 0.05 }}
+                      className="hover:bg-gray-50 transition-colors"
+                    >
+                      <td className="px-6 py-4">
+                        <div>
+                          <div className="font-medium text-gray-900">{lead['Client Name']}</div>
+                          <div className="text-sm text-gray-500">{lead.Phone}</div>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div>
+                          <div className="text-sm font-medium text-gray-900">{lead['Event Type']}</div>
+                          <div className="text-sm text-gray-500">{formatDate(lead['Event Date'])}</div>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 text-right font-semibold text-gray-900">
+                        {formatCurrency(summary.budget)}
+                      </td>
+                      <td className="px-6 py-4 text-right">
+                        <div className="font-semibold text-green-600">
+                          {formatCurrency(summary.totalPaid)}
+                        </div>
+                        <div className="text-xs text-gray-500">
+                          {summary.paymentCount} payment{summary.paymentCount !== 1 ? 's' : ''}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 text-right">
+                        <div className={`font-semibold ${summary.pending > 0 ? 'text-orange-600' : 'text-gray-400'}`}>
+                          {formatCurrency(summary.pending)}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex justify-center">
+                          <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium ${summary.color}`}>
+                            <StatusIcon />
+                            {summary.status}
+                          </span>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex items-center justify-center gap-2">
+                          <button
+                            onClick={() => openPaymentModal(lead)}
+                            className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                            title="Add Payment"
+                          >
+                            <FaPlus />
+                          </button>
+                          <button
+                            onClick={() => openHistoryModal(lead)}
+                            className="p-2 text-green-600 hover:bg-green-50 rounded-lg transition-colors"
+                            title="View History"
+                          >
+                            <FaHistory />
+                          </button>
+                          <button
+                            className="p-2 text-purple-600 hover:bg-purple-50 rounded-lg transition-colors"
+                            title="Generate Receipt"
+                          >
+                            <FaReceipt />
+                          </button>
+                        </div>
+                      </td>
+                    </motion.tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+
+      {/* Add Payment Modal */}
       <AnimatePresence>
-        {isModalOpen && selectedLead && (
-          <PaymentDetailModal
-            lead={selectedLead}
-            onClose={() => {
-              setIsModalOpen(false)
-              setSelectedLead(null)
-            }}
-          />
+        {isPaymentModalOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+            onClick={() => setIsPaymentModalOpen(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.9, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.9, y: 20 }}
+              onClick={(e) => e.stopPropagation()}
+              className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto"
+            >
+              <div className="sticky top-0 bg-gradient-to-r from-blue-600 to-blue-700 text-white p-6 rounded-t-2xl">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h2 className="text-2xl font-bold flex items-center gap-2">
+                      <FaMoneyBillWave />
+                      Add Payment
+                    </h2>
+                    <p className="text-blue-100 mt-1">{selectedLead?.['Client Name']}</p>
+                  </div>
+                  <button
+                    onClick={() => setIsPaymentModalOpen(false)}
+                    className="p-2 hover:bg-white/20 rounded-lg transition-colors"
+                  >
+                    <FaTimes className="text-xl" />
+                  </button>
+                </div>
+              </div>
+
+              <div className="p-6">
+                {/* Payment Summary */}
+                {selectedLead && (() => {
+                  const summary = getPaymentSummary(selectedLead)
+                  return (
+                    <div className="bg-gray-50 rounded-xl p-4 mb-6">
+                      <div className="grid grid-cols-3 gap-4 text-center">
+                        <div>
+                          <p className="text-sm text-gray-600 mb-1">Total Amount</p>
+                          <p className="text-lg font-bold text-gray-900">{formatCurrency(summary.budget)}</p>
+                        </div>
+                        <div>
+                          <p className="text-sm text-gray-600 mb-1">Already Paid</p>
+                          <p className="text-lg font-bold text-green-600">{formatCurrency(summary.totalPaid)}</p>
+                        </div>
+                        <div>
+                          <p className="text-sm text-gray-600 mb-1">Remaining</p>
+                          <p className="text-lg font-bold text-orange-600">{formatCurrency(summary.pending)}</p>
+                        </div>
+                      </div>
+                    </div>
+                  )
+                })()}
+
+                {/* Payment Form */}
+                <div className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Amount *
+                      </label>
+                      <div className="relative">
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">₹</span>
+                        <input
+                          type="number"
+                          value={paymentForm.amount}
+                          onChange={(e) => setPaymentForm({ ...paymentForm, amount: e.target.value })}
+                          className="w-full pl-8 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                          placeholder="0.00"
+                          required
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Payment Type *
+                      </label>
+                      <select
+                        value={paymentForm.paymentType}
+                        onChange={(e) => setPaymentForm({ ...paymentForm, paymentType: e.target.value })}
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                      >
+                        <option value="Advance">Advance</option>
+                        <option value="Balance">Balance</option>
+                        <option value="Full Payment">Full Payment</option>
+                        <option value="Partial">Partial Payment</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Payment Method *
+                      </label>
+                      <select
+                        value={paymentForm.paymentMethod}
+                        onChange={(e) => setPaymentForm({ ...paymentForm, paymentMethod: e.target.value })}
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                      >
+                        <option value="UPI">UPI</option>
+                        <option value="Cash">Cash</option>
+                        <option value="Card">Card</option>
+                        <option value="Bank Transfer">Bank Transfer</option>
+                        <option value="Cheque">Cheque</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Payment Date *
+                      </label>
+                      <input
+                        type="date"
+                        value={paymentForm.paymentDate}
+                        onChange={(e) => setPaymentForm({ ...paymentForm, paymentDate: e.target.value })}
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Transaction ID / Reference
+                    </label>
+                    <input
+                      type="text"
+                      value={paymentForm.transactionId}
+                      onChange={(e) => setPaymentForm({ ...paymentForm, transactionId: e.target.value })}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                      placeholder="Enter transaction ID or reference number"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Notes
+                    </label>
+                    <textarea
+                      value={paymentForm.notes}
+                      onChange={(e) => setPaymentForm({ ...paymentForm, notes: e.target.value })}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                      rows="3"
+                      placeholder="Add any additional notes..."
+                    />
+                  </div>
+                </div>
+
+                {/* Action Buttons */}
+                <div className="flex gap-3 mt-6">
+                  <button
+                    onClick={handleAddPayment}
+                    className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-6 rounded-lg transition-colors flex items-center justify-center gap-2"
+                  >
+                    <FaCheckCircle />
+                    Add Payment
+                  </button>
+                  <button
+                    onClick={() => setIsPaymentModalOpen(false)}
+                    className="px-6 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Payment History Modal */}
+      <AnimatePresence>
+        {isHistoryModalOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+            onClick={() => setIsHistoryModalOpen(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.9, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.9, y: 20 }}
+              onClick={(e) => e.stopPropagation()}
+              className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto"
+            >
+              <div className="sticky top-0 bg-gradient-to-r from-green-600 to-green-700 text-white p-6 rounded-t-2xl">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h2 className="text-2xl font-bold flex items-center gap-2">
+                      <FaHistory />
+                      Payment History
+                    </h2>
+                    <p className="text-green-100 mt-1">{selectedLead?.['Client Name']}</p>
+                  </div>
+                  <button
+                    onClick={() => setIsHistoryModalOpen(false)}
+                    className="p-2 hover:bg-white/20 rounded-lg transition-colors"
+                  >
+                    <FaTimes className="text-xl" />
+                  </button>
+                </div>
+              </div>
+
+              <div className="p-6">
+                {selectedPayments.length === 0 ? (
+                  <div className="text-center py-12">
+                    <FaHistory className="text-6xl text-gray-300 mx-auto mb-4" />
+                    <p className="text-gray-500">No payment history found</p>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {selectedPayments.map((payment, index) => (
+                      <motion.div
+                        key={payment.id || index}
+                        initial={{ opacity: 0, x: -20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: index * 0.1 }}
+                        className="bg-gray-50 rounded-xl p-4 border border-gray-200 hover:shadow-md transition-shadow"
+                      >
+                        <div className="flex items-start justify-between">
+                          <div className="flex items-start gap-4 flex-1">
+                            <div className="p-3 bg-white rounded-lg shadow-sm">
+                              {getPaymentMethodIcon(payment.paymentMethod)}
+                            </div>
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2 mb-1">
+                                <h3 className="font-semibold text-gray-900">{payment.paymentType}</h3>
+                                <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">
+                                  {payment.paymentMethod}
+                                </span>
+                              </div>
+                              <p className="text-sm text-gray-600 mb-2">
+                                {formatDate(payment.paymentDate)}
+                              </p>
+                              {payment.transactionId && (
+                                <p className="text-xs text-gray-500">
+                                  Txn ID: {payment.transactionId}
+                                </p>
+                              )}
+                              {payment.notes && (
+                                <p className="text-sm text-gray-600 mt-2 italic">
+                                  "{payment.notes}"
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-2xl font-bold text-green-600">
+                              {formatCurrency(payment.amount)}
+                            </p>
+                          </div>
+                        </div>
+                      </motion.div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </motion.div>
+          </motion.div>
         )}
       </AnimatePresence>
     </div>
-  )
-}
-
-// Payment Detail Modal Component
-const PaymentDetailModal = ({ lead, onClose }) => {
-  const budget = parseBudget(lead.Budget)
-  const advanceAmount = budget * 0.15
-  const balanceAmount = budget * 0.85
-  const advancePaid = lead['Advance Paid'] === 'TRUE' || lead['Advance Paid'] === true
-  const balancePaid = lead['Balance Paid'] === 'TRUE' || lead['Balance Paid'] === true
-
-const parseBudget = (budgetString) => {
-  if (!budgetString) return 0
-  
-  // Convert to string if it's not
-  const budgetStr = String(budgetString)
-  
-  // Remove ₹, commas, and parse as number
-  const cleaned = budgetStr.replace(/[₹,]/g, '').trim()
-  return parseFloat(cleaned) || 0
-}
-
-  const formatCurrency = (amount) => {
-    return '₹' + amount.toLocaleString('en-IN')
-  }
-
-  const formatDate = (dateString) => {
-    if (!dateString) return 'N/A'
-    return new Date(dateString).toLocaleDateString('en-IN', {
-      day: 'numeric',
-      month: 'long',
-      year: 'numeric'
-    })
-  }
-
-  return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
-      onClick={onClose}
-    >
-      <motion.div
-        initial={{ scale: 0.9, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
-        exit={{ scale: 0.9, opacity: 0 }}
-        onClick={(e) => e.stopPropagation()}
-        className="bg-white rounded-2xl shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto"
-      >
-        {/* Modal Header */}
-        <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white p-6 rounded-t-2xl">
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className="text-2xl font-bold">{lead['Client Name']}</h3>
-              <p className="text-blue-100">{lead['Event Type']} - {formatDate(lead['Event Date'])}</p>
-            </div>
-            <button
-              onClick={onClose}
-              className="p-2 hover:bg-white/20 rounded-lg transition-colors"
-            >
-              <FaTimes size={24} />
-            </button>
-          </div>
-        </div>
-
-        {/* Modal Body */}
-        <div className="p-6 space-y-6">
-          
-          {/* Payment Overview */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="bg-blue-50 p-4 rounded-xl text-center">
-              <FaMoneyBillWave className="text-3xl text-blue-600 mx-auto mb-2" />
-              <p className="text-sm text-gray-600 mb-1">Total Amount</p>
-              <p className="text-2xl font-bold text-gray-800">{formatCurrency(budget)}</p>
-            </div>
-            <div className={`${advancePaid ? 'bg-green-50' : 'bg-orange-50'} p-4 rounded-xl text-center`}>
-              {advancePaid ? <FaCheckCircle className="text-3xl text-green-600 mx-auto mb-2" /> : <FaClock className="text-3xl text-orange-600 mx-auto mb-2" />}
-              <p className="text-sm text-gray-600 mb-1">Advance (15%)</p>
-              <p className="text-2xl font-bold text-gray-800">{formatCurrency(advanceAmount)}</p>
-              <p className={`text-xs font-semibold mt-1 ${advancePaid ? 'text-green-600' : 'text-orange-600'}`}>
-                {advancePaid ? 'Paid ✓' : 'Pending'}
-              </p>
-            </div>
-            <div className={`${balancePaid ? 'bg-green-50' : 'bg-yellow-50'} p-4 rounded-xl text-center`}>
-              {balancePaid ? <FaCheckCircle className="text-3xl text-green-600 mx-auto mb-2" /> : <FaClock className="text-3xl text-yellow-600 mx-auto mb-2" />}
-              <p className="text-sm text-gray-600 mb-1">Balance (85%)</p>
-              <p className="text-2xl font-bold text-gray-800">{formatCurrency(balanceAmount)}</p>
-              <p className={`text-xs font-semibold mt-1 ${balancePaid ? 'text-green-600' : 'text-yellow-600'}`}>
-                {balancePaid ? 'Paid ✓' : 'Pending'}
-              </p>
-            </div>
-          </div>
-
-          {/* Payment Timeline */}
-          <div>
-            <h4 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
-              <FaHistory /> Payment Timeline
-            </h4>
-            
-            <div className="space-y-4">
-              {/* Advance Payment */}
-              <div className="flex items-start gap-4 pb-4 border-b border-gray-200">
-                <div className={`flex-shrink-0 w-12 h-12 ${advancePaid ? 'bg-green-500' : 'bg-gray-300'} rounded-full flex items-center justify-center text-white`}>
-                  {advancePaid ? <FaCheckCircle size={24} /> : <FaClock size={24} />}
-                </div>
-                <div className="flex-grow">
-                  <h5 className="font-semibold text-gray-800">Advance Payment</h5>
-                  <p className="text-sm text-gray-600">Amount: {formatCurrency(advanceAmount)}</p>
-                  {advancePaid && lead['Advance Payment Date'] && (
-                    <p className="text-sm text-green-600 mt-1">
-                      Paid on: {formatDate(lead['Advance Payment Date'])}
-                    </p>
-                  )}
-                  {!advancePaid && (
-                    <p className="text-sm text-orange-600 mt-1">⚠️ Pending</p>
-                  )}
-                </div>
-              </div>
-
-              {/* Balance Payment */}
-              <div className="flex items-start gap-4">
-                <div className={`flex-shrink-0 w-12 h-12 ${balancePaid ? 'bg-green-500' : 'bg-gray-300'} rounded-full flex items-center justify-center text-white`}>
-                  {balancePaid ? <FaCheckCircle size={24} /> : <FaClock size={24} />}
-                </div>
-                <div className="flex-grow">
-                  <h5 className="font-semibold text-gray-800">Balance Payment</h5>
-                  <p className="text-sm text-gray-600">Amount: {formatCurrency(balanceAmount)}</p>
-                  {balancePaid && lead['Balance Payment Date'] && (
-                    <p className="text-sm text-green-600 mt-1">
-                      Paid on: {formatDate(lead['Balance Payment Date'])}
-                    </p>
-                  )}
-                  {!balancePaid && lead['Balance Due Date'] && (
-                    <p className="text-sm text-yellow-600 mt-1">
-                      Due by: {formatDate(lead['Balance Due Date'])}
-                    </p>
-                  )}
-                  {!balancePaid && !lead['Balance Due Date'] && (
-                    <p className="text-sm text-gray-500 mt-1">No due date set</p>
-                  )}
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Contact Info */}
-          <div>
-            <h4 className="text-lg font-semibold text-gray-800 mb-3 flex items-center gap-2">
-              <FaUser /> Contact Information
-            </h4>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="bg-gray-50 p-4 rounded-lg">
-                <p className="text-sm text-gray-500 mb-1">Phone</p>
-                <p className="font-medium text-gray-800">{lead.Phone}</p>
-              </div>
-              <div className="bg-gray-50 p-4 rounded-lg">
-                <p className="text-sm text-gray-500 mb-1">Email</p>
-                <p className="font-medium text-gray-800 truncate">{lead.Email}</p>
-              </div>
-            </div>
-          </div>
-
-        </div>
-
-        {/* Modal Footer */}
-        <div className="bg-gray-50 p-6 rounded-b-2xl flex gap-3">
-          <a
-            href={`tel:${lead.Phone}`}
-            className="flex-1 bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 transition-colors text-center font-semibold"
-          >
-            Call Client
-          </a>
-          <a
-            href={`mailto:${lead.Email}`}
-            className="flex-1 bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors text-center font-semibold"
-          >
-            Send Reminder
-          </a>
-        </div>
-      </motion.div>
-    </motion.div>
   )
 }
 
