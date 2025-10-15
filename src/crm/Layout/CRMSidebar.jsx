@@ -8,5 +8,9 @@ const menuItems = [
   { name: 'Expenses', icon: FaReceipt, path: '/crm/expenses' },
   { name: 'Salary', icon: FaWallet, path: '/crm/salary' },
   { name: 'Reports', icon: FaFileAlt, path: '/crm/reports' },
+  {name: 'Reminders', icon: FaBell, path: '/crm/reminders' },
+  {name: 'Contracts', icon: FaFileContract, path: '/crm/contracts' },
+  {name: 'Invoices', icon: FaFileInvoiceDollar, path: '/crm/invoices' },
+  {name: 'Proposals', icon: FaFileSignature, path: '/crm/proposals' },
   { name: 'Settings', icon: FaCog, path: '/crm/settings' }
 ]

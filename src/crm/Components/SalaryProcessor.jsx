@@ -51,7 +51,7 @@ const SalaryProcessor = () => {
     notes: ''
   })
 
-  const GAS_URL = 'https://script.google.com/macros/s/AKfycbyPaRgSMzaVg-8IPjkDPXvnf0ti1Y12vBB2ixWb751-zl9tiG36IblgSa-v8UBlRnZjNg/exec'
+  const GAS_URL = 'https://script.google.com/macros/s/AKfycbxor8ZV3Meq7lo0DBZ68wn8WZg_R1rF3W7T5AD5AaRsAqLzfUHsmgPjU8cr1OSQINw8Tg/exec'
 
   // ==================== DATA FETCHING ====================
   useEffect(() => {
@@ -208,7 +208,17 @@ const SalaryProcessor = () => {
         headers: { 'Content-Type': 'text/plain' },
         body: JSON.stringify({
           action: 'processSalary',
-          ...salaryData,
+          photographerId: salaryData.photographerId,
+          photographerName: salaryData.photographerName,
+          month: salaryData.month,
+          year: salaryData.year,
+          workingDays: salaryData.workingDays,
+          dailyRate: salaryData.dailyRate,
+          basicSalary: salaryData.basicSalary,
+          bonus: salaryData.bonus,
+          deductions: salaryData.deductions,
+          netSalary: salaryData.netSalary,
+          notes: salaryData.notes,
           processedDate: new Date().toISOString()
         })
       })
@@ -241,7 +251,18 @@ const SalaryProcessor = () => {
         headers: { 'Content-Type': 'text/plain' },
         body: JSON.stringify({
           action: 'updateSalary',
-          ...salaryData,
+          id: salaryData.id,
+          photographerId: salaryData.photographerId,
+          photographerName: salaryData.photographerName,
+          month: salaryData.month,
+          year: salaryData.year,
+          workingDays: salaryData.workingDays,
+          dailyRate: salaryData.dailyRate,
+          basicSalary: salaryData.basicSalary,
+          bonus: salaryData.bonus,
+          deductions: salaryData.deductions,
+          netSalary: salaryData.netSalary,
+          notes: salaryData.notes,
           updatedDate: new Date().toISOString()
         })
       })
@@ -270,9 +291,12 @@ const SalaryProcessor = () => {
     const remaining = parseFloat(salary.netSalary || 0) - totalPaid
     
     setPaymentForm({
-      ...paymentForm,
       amount: remaining > 0 ? remaining.toString() : '',
-      paymentType: totalPaid > 0 ? 'Partial Payment' : 'Full Payment'
+      paymentMethod: 'UPI',
+      paymentDate: new Date().toISOString().split('T')[0],
+      paymentType: totalPaid > 0 ? 'Partial Payment' : 'Full Payment',
+      transactionId: '',
+      notes: ''
     })
     
     setIsPaymentModalOpen(true)
@@ -680,7 +704,7 @@ const SalaryProcessor = () => {
 
       {/* ==================== PROCESS SALARY MODAL ==================== */}
       <AnimatePresence>
-        {isProcessModalOpen && (
+        {isProcessModalOpen && selectedPhotographer && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -702,7 +726,7 @@ const SalaryProcessor = () => {
                       <FaCalculator />
                       Process Salary
                     </h2>
-                    <p className="text-blue-100 mt-1">{selectedPhotographer?.name}</p>
+                    <p className="text-blue-100 mt-1">{selectedPhotographer.name}</p>
                   </div>
                   <button
                     onClick={() => setIsProcessModalOpen(false)}
@@ -714,7 +738,6 @@ const SalaryProcessor = () => {
               </div>
 
               <div className="p-6 space-y-4">
-                {/* Summary Card */}
                 <div className="bg-blue-50 rounded-xl p-4">
                   <div className="grid grid-cols-3 gap-4 text-center">
                     <div>
@@ -734,7 +757,6 @@ const SalaryProcessor = () => {
                   </div>
                 </div>
 
-                {/* Form */}
                 <div className="grid grid-cols-2 gap-4">
                   <div className="col-span-2">
                     <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -827,9 +849,9 @@ const SalaryProcessor = () => {
         )}
       </AnimatePresence>
 
-      {/* EDIT MODAL - Same structure as Process Modal but with update function */}
+      {/* EDIT MODAL */}
       <AnimatePresence>
-        {isEditModalOpen && (
+        {isEditModalOpen && selectedPhotographer && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -840,7 +862,7 @@ const SalaryProcessor = () => {
             <motion.div
               initial={{ scale: 0.9, y: 20 }}
               animate={{ scale: 1, y: 0 }}
-              exit={{ scale: 0.9, y: 2}}
+              exit={{ scale: 0.9, y: 20 }}
               onClick={(e) => e.stopPropagation()}
               className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto"
             >
@@ -851,7 +873,7 @@ const SalaryProcessor = () => {
                       <FaEdit />
                       Edit Salary (Re-processing)
                     </h2>
-                    <p className="text-green-100 mt-1">{selectedPhotographer?.name}</p>
+                    <p className="text-green-100 mt-1">{selectedPhotographer.name}</p>
                   </div>
                   <button
                     onClick={() => setIsEditModalOpen(false)}
@@ -973,7 +995,7 @@ const SalaryProcessor = () => {
 
       {/* PAYMENT MODAL */}
       <AnimatePresence>
-        {isPaymentModalOpen && selectedSalary && (
+        {isPaymentModalOpen && selectedSalary && selectedPhotographer && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -995,7 +1017,7 @@ const SalaryProcessor = () => {
                       <FaWallet />
                       Add Payment
                     </h2>
-                    <p className="text-purple-100 mt-1">{selectedPhotographer?.name}</p>
+                    <p className="text-purple-100 mt-1">{selectedPhotographer.name}</p>
                   </div>
                   <button
                     onClick={() => setIsPaymentModalOpen(false)}
@@ -1007,7 +1029,6 @@ const SalaryProcessor = () => {
               </div>
 
               <div className="p-6 space-y-4">
-                {/* Payment Summary */}
                 <div className="bg-purple-50 rounded-xl p-4">
                   {(() => {
                     const payments = getSalaryPayments(selectedSalary.id)
@@ -1129,7 +1150,7 @@ const SalaryProcessor = () => {
 
       {/* PAYMENT HISTORY MODAL */}
       <AnimatePresence>
-        {isHistoryModalOpen && selectedSalary && (
+        {isHistoryModalOpen && selectedSalary && selectedPhotographer && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -1152,7 +1173,7 @@ const SalaryProcessor = () => {
                       Payment History
                     </h2>
                     <p className="text-orange-100 mt-1">
-                      {selectedPhotographer?.name} - {monthNames[parseInt(selectedSalary.month)]} {selectedSalary.year}
+                      {selectedPhotographer.name} - {monthNames[parseInt(selectedSalary.month)]} {selectedSalary.year}
                     </p>
                   </div>
                   <button
@@ -1182,7 +1203,6 @@ const SalaryProcessor = () => {
 
                   return (
                     <>
-                      {/* Summary */}
                       <div className="bg-gray-50 rounded-xl p-4 mb-6">
                         <div className="grid grid-cols-3 gap-4 text-center">
                           <div>
@@ -1200,7 +1220,6 @@ const SalaryProcessor = () => {
                         </div>
                       </div>
 
-                      {/* Payment Timeline */}
                       <div className="space-y-3">
                         {payments.map((payment, index) => {
                           const MethodIcon = getPaymentMethodIcon(payment.paymentMethod)
@@ -1254,341 +1273,154 @@ const SalaryProcessor = () => {
         )}
       </AnimatePresence>
 
-{/* ==================== VIEW SALARY SLIP MODAL ==================== */}
-<AnimatePresence>
-  {isViewModalOpen && selectedSalary && selectedPhotographer && (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4"
-      onClick={() => setIsViewModalOpen(false)}
-    >
-      <motion.div
-        initial={{ scale: 0.9, y: 20 }}
-        animate={{ scale: 1, y: 0 }}
-        exit={{ scale: 0.9, y: 20 }}
-        onClick={(e) => e.stopPropagation()}
-        className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto"
-      >
-        {/* Modal Header */}
-        <div className="sticky top-0 bg-gradient-to-r from-indigo-600 to-indigo-700 text-white p-6 rounded-t-2xl z-10">
-          <div className="flex items-center justify-between">
-            <div>
-              <h2 className="text-2xl font-bold flex items-center gap-2">
-                <FaFileInvoice />
-                Salary Slip
-              </h2>
-              <p className="text-indigo-100 mt-1">
-                {monthNames[parseInt(selectedSalary.month)]} {selectedSalary.year}
-              </p>
-            </div>
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => {
-                  const printContent = document.getElementById('salary-slip-content')
-                  const printWindow = window.open('', '', 'height=800,width=800')
-                  printWindow.document.write('<html><head><title>Salary Slip</title>')
-                  printWindow.document.write('<style>')
-                  printWindow.document.write(`
-                    body { font-family: Arial, sans-serif; padding: 20px; }
-                    .header { text-align: center; margin-bottom: 30px; border-bottom: 3px solid #4F46E5; padding-bottom: 20px; }
-                    .company-name { font-size: 28px; font-weight: bold; color: #4F46E5; margin-bottom: 5px; }
-                    .slip-title { font-size: 20px; color: #666; margin-top: 10px; }
-                    .info-section { margin: 20px 0; }
-                    .info-row { display: flex; justify-content: space-between; padding: 10px; border-bottom: 1px solid #eee; }
-                    .label { font-weight: 600; color: #555; }
-                    .value { color: #333; }
-                    .earnings-section, .deductions-section { margin: 20px 0; }
-                    .section-title { font-size: 18px; font-weight: bold; color: #4F46E5; margin-bottom: 15px; padding: 10px; background: #EEF2FF; border-left: 4px solid #4F46E5; }
-                    .amount-row { display: flex; justify-content: space-between; padding: 12px; margin: 5px 0; background: #f9fafb; border-radius: 6px; }
-                    .net-salary { background: #10B981; color: white; padding: 20px; margin-top: 20px; border-radius: 8px; text-align: center; }
-                    .net-salary-label { font-size: 16px; margin-bottom: 5px; }
-                    .net-salary-amount { font-size: 32px; font-weight: bold; }
-                    .footer { margin-top: 40px; padding-top: 20px; border-top: 2px solid #eee; text-align: center; color: #666; font-size: 12px; }
-                    .signature-section { display: flex; justify-content: space-between; margin-top: 60px; padding: 0 40px; }
-                    .signature-box { text-align: center; }
-                    .signature-line { border-top: 2px solid #333; width: 200px; margin-top: 60px; padding-top: 10px; }
-                    @media print { 
-                      body { padding: 0; }
-                      .no-print { display: none; }
-                    }
-                  `)
-                  printWindow.document.write('</style></head><body>')
-                  printWindow.document.write(printContent.innerHTML)
-                  printWindow.document.write('</body></html>')
-                  printWindow.document.close()
-                  printWindow.print()
-                }}
-                className="p-2 hover:bg-white/20 rounded-lg transition-colors"
-                title="Print Slip"
-              >
-                <FaPrint className="text-xl" />
-              </button>
-              <button
-                onClick={() => {
-                  // Download as PDF (requires html2pdf library or similar)
-                  alert('PDF download feature requires html2pdf.js library. Will download as print for now.')
-                  const printContent = document.getElementById('salary-slip-content')
-                  const printWindow = window.open('', '', 'height=800,width=800')
-                  printWindow.document.write('<html><head><title>Salary Slip</title>')
-                  printWindow.document.write('<style>')
-                  printWindow.document.write(`
-                    body { font-family: Arial, sans-serif; padding: 20px; }
-                    .header { text-align: center; margin-bottom: 30px; border-bottom: 3px solid #4F46E5; padding-bottom: 20px; }
-                    .company-name { font-size: 28px; font-weight: bold; color: #4F46E5; margin-bottom: 5px; }
-                    .slip-title { font-size: 20px; color: #666; margin-top: 10px; }
-                    .info-section { margin: 20px 0; }
-                    .info-row { display: flex; justify-content: space-between; padding: 10px; border-bottom: 1px solid #eee; }
-                    .label { font-weight: 600; color: #555; }
-                    .value { color: #333; }
-                    .section-title { font-size: 18px; font-weight: bold; color: #4F46E5; margin-bottom: 15px; padding: 10px; background: #EEF2FF; border-left: 4px solid #4F46E5; }
-                    .amount-row { display: flex; justify-content: space-between; padding: 12px; margin: 5px 0; background: #f9fafb; border-radius: 6px; }
-                    .net-salary { background: #10B981; color: white; padding: 20px; margin-top: 20px; border-radius: 8px; text-align: center; }
-                    .net-salary-amount { font-size: 32px; font-weight: bold; }
-                    .signature-section { display: flex; justify-content: space-between; margin-top: 60px; padding: 0 40px; }
-                    .signature-line { border-top: 2px solid #333; width: 200px; margin-top: 60px; padding-top: 10px; }
-                  `)
-                  printWindow.document.write('</style></head><body>')
-                  printWindow.document.write(printContent.innerHTML)
-                  printWindow.document.write('</body></html>')
-                  printWindow.document.close()
-                  printWindow.print()
-                }}
-                className="p-2 hover:bg-white/20 rounded-lg transition-colors"
-                title="Download PDF"
-              >
-                <FaDownload className="text-xl" />
-              </button>
-              <button
-                onClick={() => setIsViewModalOpen(false)}
-                className="p-2 hover:bg-white/20 rounded-lg transition-colors"
-              >
-                <FaTimes className="text-xl" />
-              </button>
-            </div>
-          </div>
-        </div>
-
-        {/* Salary Slip Content */}
-        <div id="salary-slip-content" className="p-8">
-          {/* Company Header */}
-          <div className="text-center mb-8 pb-6 border-b-4 border-indigo-600">
-            <h1 className="text-3xl font-bold text-indigo-600 mb-2">RN PHOTOFILMS</h1>
-            <p className="text-gray-600 text-sm">Professional Photography & Videography Services</p>
-            <p className="text-gray-500 text-xs mt-2">Email: rnstudio.x@gmail.com | Phone: +91 XXXXXXXXXX</p>
-            <h2 className="text-xl font-semibold text-gray-700 mt-4">SALARY SLIP</h2>
-            <p className="text-gray-600 text-sm">
-              For the month of {monthNames[parseInt(selectedSalary.month)]} {selectedSalary.year}
-            </p>
-          </div>
-
-          {/* Employee Information */}
-          <div className="mb-6">
-            <h3 className="text-lg font-bold text-indigo-600 mb-4 pb-2 border-b-2 border-indigo-200">
-              Employee Information
-            </h3>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="bg-gray-50 p-3 rounded-lg">
-                <p className="text-sm text-gray-600 mb-1">Employee Name</p>
-                <p className="font-semibold text-gray-900">{selectedPhotographer.name}</p>
-              </div>
-              <div className="bg-gray-50 p-3 rounded-lg">
-                <p className="text-sm text-gray-600 mb-1">Designation</p>
-                <p className="font-semibold text-gray-900">{selectedPhotographer.specialization}</p>
-              </div>
-              <div className="bg-gray-50 p-3 rounded-lg">
-                <p className="text-sm text-gray-600 mb-1">Employee ID</p>
-                <p className="font-semibold text-gray-900">{selectedPhotographer.id}</p>
-              </div>
-              <div className="bg-gray-50 p-3 rounded-lg">
-                <p className="text-sm text-gray-600 mb-1">Pay Period</p>
-                <p className="font-semibold text-gray-900">
-                  {monthNames[parseInt(selectedSalary.month)]} {selectedSalary.year}
-                </p>
-              </div>
-            </div>
-          </div>
-
-          {/* Attendance Summary */}
-          <div className="mb-6">
-            <h3 className="text-lg font-bold text-indigo-600 mb-4 pb-2 border-b-2 border-indigo-200">
-              Attendance Summary
-            </h3>
-            <div className="grid grid-cols-3 gap-4">
-              <div className="bg-gray-50 p-3 rounded-lg text-center">
-                <p className="text-sm text-gray-600 mb-1">Working Days</p>
-                <p className="text-2xl font-bold text-gray-900">{selectedSalary.workingDays}</p>
-              </div>
-              <div className="bg-gray-50 p-3 rounded-lg text-center">
-                <p className="text-sm text-gray-600 mb-1">Daily Rate</p>
-                <p className="text-2xl font-bold text-gray-900">{formatCurrency(selectedSalary.dailyRate)}</p>
-              </div>
-              <div className="bg-gray-50 p-3 rounded-lg text-center">
-                <p className="text-sm text-gray-600 mb-1">Basic Calculation</p>
-                <p className="text-sm font-semibold text-gray-900">
-                  {selectedSalary.workingDays} × {formatCurrency(selectedSalary.dailyRate)}
-                </p>
-              </div>
-            </div>
-          </div>
-
-          {/* Earnings & Deductions */}
-          <div className="grid grid-cols-2 gap-6 mb-6">
-            {/* Earnings */}
-            <div>
-              <h3 className="text-lg font-bold text-green-600 mb-4 pb-2 border-b-2 border-green-200">
-                Earnings
-              </h3>
-              <div className="space-y-2">
-                <div className="flex justify-between items-center bg-gray-50 p-3 rounded-lg">
-                  <span className="text-gray-700">Basic Salary</span>
-                  <span className="font-semibold text-gray-900">{formatCurrency(selectedSalary.basicSalary)}</span>
-                </div>
-                {parseFloat(selectedSalary.bonus || 0) > 0 && (
-                  <div className="flex justify-between items-center bg-gray-50 p-3 rounded-lg">
-                    <span className="text-gray-700">Bonus / Incentive</span>
-                    <span className="font-semibold text-green-600">+ {formatCurrency(selectedSalary.bonus)}</span>
+      {/* VIEW SALARY SLIP MODAL */}
+      <AnimatePresence>
+        {isViewModalOpen && selectedSalary && selectedPhotographer && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+            onClick={() => setIsViewModalOpen(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.9, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.9, y: 20 }}
+              onClick={(e) => e.stopPropagation()}
+              className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto"
+            >
+              <div className="sticky top-0 bg-gradient-to-r from-indigo-600 to-indigo-700 text-white p-6 rounded-t-2xl z-10">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h2 className="text-2xl font-bold flex items-center gap-2">
+                      <FaFileInvoice />
+                      Salary Slip
+                    </h2>
+                    <p className="text-indigo-100 mt-1">
+                      {monthNames[parseInt(selectedSalary.month)]} {selectedSalary.year}
+                    </p>
                   </div>
-                )}
-                <div className="flex justify-between items-center bg-green-50 p-3 rounded-lg border-t-2 border-green-600">
-                  <span className="font-bold text-gray-900">Gross Earnings</span>
-                  <span className="font-bold text-green-600">
-                    {formatCurrency(parseFloat(selectedSalary.basicSalary) + parseFloat(selectedSalary.bonus || 0))}
-                  </span>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => window.print()}
+                      className="p-2 hover:bg-white/20 rounded-lg transition-colors"
+                      title="Print Slip"
+                    >
+                      <FaPrint className="text-xl" />
+                    </button>
+                    <button
+                      onClick={() => setIsViewModalOpen(false)}
+                      className="p-2 hover:bg-white/20 rounded-lg transition-colors"
+                    >
+                      <FaTimes className="text-xl" />
+                    </button>
+                  </div>
                 </div>
               </div>
-            </div>
 
-            {/* Deductions */}
-            <div>
-              <h3 className="text-lg font-bold text-red-600 mb-4 pb-2 border-b-2 border-red-200">
-                Deductions
-              </h3>
-              <div className="space-y-2">
-                {parseFloat(selectedSalary.deductions || 0) > 0 ? (
-                  <>
-                    <div className="flex justify-between items-center bg-gray-50 p-3 rounded-lg">
-                      <span className="text-gray-700">Deductions</span>
-                      <span className="font-semibold text-red-600">- {formatCurrency(selectedSalary.deductions)}</span>
-                    </div>
-                    <div className="flex justify-between items-center bg-red-50 p-3 rounded-lg border-t-2 border-red-600">
-                      <span className="font-bold text-gray-900">Total Deductions</span>
-                      <span className="font-bold text-red-600">- {formatCurrency(selectedSalary.deductions)}</span>
-                    </div>
-                  </>
-                ) : (
-                  <div className="bg-gray-50 p-3 rounded-lg text-center">
-                    <p className="text-gray-500 text-sm">No Deductions</p>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
+              <div id="salary-slip-content" className="p-8">
+                <div className="text-center mb-8 pb-6 border-b-4 border-indigo-600">
+                  <h1 className="text-3xl font-bold text-indigo-600 mb-2">RN PHOTOFILMS</h1>
+                  <p className="text-gray-600 text-sm">Professional Photography & Videography Services</p>
+                  <h2 className="text-xl font-semibold text-gray-700 mt-4">SALARY SLIP</h2>
+                  <p className="text-gray-600 text-sm">
+                    For the month of {monthNames[parseInt(selectedSalary.month)]} {selectedSalary.year}
+                  </p>
+                </div>
 
-          {/* Payment Details */}
-          {(() => {
-            const payments = getSalaryPayments(selectedSalary.id)
-            if (payments.length > 0) {
-              const totalPaid = payments.reduce((sum, p) => sum + parseFloat(p.amount || 0), 0)
-              const remaining = parseFloat(selectedSalary.netSalary || 0) - totalPaid
-
-              return (
                 <div className="mb-6">
-                  <h3 className="text-lg font-bold text-purple-600 mb-4 pb-2 border-b-2 border-purple-200">
-                    Payment Details
-                  </h3>
-                  <div className="space-y-2 mb-4">
-                    {payments.map((payment, idx) => (
-                      <div key={idx} className="flex justify-between items-center bg-gray-50 p-3 rounded-lg">
-                        <div>
-                          <p className="font-semibold text-gray-900">
-                            Payment #{idx + 1} - {payment.paymentMethod}
-                          </p>
-                          <p className="text-xs text-gray-600">{formatDate(payment.paymentDate)}</p>
-                        </div>
-                        <span className="font-semibold text-purple-600">{formatCurrency(payment.amount)}</span>
-                      </div>
-                    ))}
-                  </div>
+                  <h3 className="text-lg font-bold text-indigo-600 mb-4">Employee Information</h3>
                   <div className="grid grid-cols-2 gap-4">
-                    <div className="bg-purple-50 p-3 rounded-lg border border-purple-200">
-                      <p className="text-sm text-gray-600 mb-1">Total Paid</p>
-                      <p className="text-xl font-bold text-purple-600">{formatCurrency(totalPaid)}</p>
+                    <div className="bg-gray-50 p-3 rounded-lg">
+                      <p className="text-sm text-gray-600">Name</p>
+                      <p className="font-semibold">{selectedPhotographer.name}</p>
                     </div>
-                    <div className="bg-orange-50 p-3 rounded-lg border border-orange-200">
-                      <p className="text-sm text-gray-600 mb-1">Balance Due</p>
-                      <p className="text-xl font-bold text-orange-600">{formatCurrency(remaining)}</p>
+                    <div className="bg-gray-50 p-3 rounded-lg">
+                      <p className="text-sm text-gray-600">ID</p>
+                      <p className="font-semibold">{selectedPhotographer.id}</p>
+                    </div>
+                    <div className="bg-gray-50 p-3 rounded-lg">
+                      <p className="text-sm text-gray-600">Working Days</p>
+                      <p className="font-semibold">{selectedSalary.workingDays}</p>
+                    </div>
+                    <div className="bg-gray-50 p-3 rounded-lg">
+                      <p className="text-sm text-gray-600">Daily Rate</p>
+                      <p className="font-semibold">{formatCurrency(selectedSalary.dailyRate)}</p>
                     </div>
                   </div>
                 </div>
-              )
-            }
-            return null
-          })()}
 
-          {/* Net Salary */}
-          <div className="bg-gradient-to-r from-green-500 to-green-600 text-white p-6 rounded-xl mb-6">
-            <div className="text-center">
-              <p className="text-lg mb-2 opacity-90">Net Salary</p>
-              <p className="text-4xl font-bold">{formatCurrency(selectedSalary.netSalary)}</p>
-              <p className="text-sm mt-2 opacity-80">
-                (Rupees {new Intl.NumberFormat('en-IN', { 
-                  style: 'currency', 
-                  currency: 'INR' 
-                }).format(selectedSalary.netSalary).replace('₹', '')} Only)
-              </p>
-            </div>
-          </div>
+                <div className="mb-6">
+                  <h3 className="text-lg font-bold text-green-600 mb-4">Earnings</h3>
+                  <div className="space-y-2">
+                    <div className="flex justify-between bg-gray-50 p-3 rounded">
+                      <span>Basic Salary</span>
+                      <span className="font-semibold">{formatCurrency(selectedSalary.basicSalary)}</span>
+                    </div>
+                    {parseFloat(selectedSalary.bonus || 0) > 0 && (
+                      <div className="flex justify-between bg-gray-50 p-3 rounded">
+                        <span>Bonus</span>
+                        <span className="font-semibold text-green-600">+{formatCurrency(selectedSalary.bonus)}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
 
-          {/* Notes */}
-          {selectedSalary.notes && (
-            <div className="mb-6">
-              <h3 className="text-lg font-bold text-gray-700 mb-2">Notes</h3>
-              <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded">
-                <p className="text-gray-700 text-sm">{selectedSalary.notes}</p>
-              </div>
-            </div>
-          )}
+                {parseFloat(selectedSalary.deductions || 0) > 0 && (
+                  <div className="mb-6">
+                    <h3 className="text-lg font-bold text-red-600 mb-4">Deductions</h3>
+                    <div className="flex justify-between bg-gray-50 p-3 rounded">
+                      <span>Total Deductions</span>
+                      <span className="font-semibold text-red-600">-{formatCurrency(selectedSalary.deductions)}</span>
+                    </div>
+                  </div>
+                )}
 
-          {/* Signatures */}
-          <div className="mt-16 pt-8 border-t-2 border-gray-300">
-            <div className="flex justify-between items-end">
-              <div className="text-center">
-                <div className="w-48 border-t-2 border-gray-800 pt-2">
-                  <p className="text-sm font-semibold text-gray-700">Employee Signature</p>
-                  <p className="text-xs text-gray-500 mt-1">{selectedPhotographer.name}</p>
+                <div className="bg-gradient-to-r from-green-500 to-green-600 text-white p-6 rounded-xl text-center mb-6">
+                  <p className="text-lg mb-2">Net Salary</p>
+                  <p className="text-4xl font-bold">{formatCurrency(selectedSalary.netSalary)}</p>
+                </div>
+
+                {selectedSalary.notes && (
+                  <div className="mb-6">
+                    <h3 className="text-lg font-bold text-gray-700 mb-2">Notes</h3>
+                    <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded">
+                      <p className="text-gray-700 text-sm">{selectedSalary.notes}</p>
+                    </div>
+                  </div>
+                )}
+
+                <div className="mt-16 pt-8 border-t-2 flex justify-between">
+                  <div className="text-center">
+                    <div className="w-48 border-t-2 border-gray-800 pt-2">
+                      <p className="text-sm font-semibold">Employee Signature</p>
+                    </div>
+                  </div>
+                  <div className="text-center">
+                    <div className="w-48 border-t-2 border-gray-800 pt-2">
+                      <p className="text-sm font-semibold">Authorized Signatory</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="mt-8 pt-4 border-t border-gray-300 text-center">
+                  <p className="text-xs text-gray-500">
+                    This is a computer-generated salary slip and does not require a signature.
+                  </p>
+                  <p className="text-xs text-gray-500 mt-1">
+                    Generated on {new Date().toLocaleDateString('en-IN', {
+                      day: 'numeric',
+                      month: 'long',
+                      year: 'numeric'
+                    })}
+                  </p>
                 </div>
               </div>
-              <div className="text-center">
-                <div className="w-48 border-t-2 border-gray-800 pt-2">
-                  <p className="text-sm font-semibold text-gray-700">Authorized Signatory</p>
-                  <p className="text-xs text-gray-500 mt-1">RN PHOTOFILMS</p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Footer */}
-          <div className="mt-8 pt-4 border-t border-gray-300 text-center">
-            <p className="text-xs text-gray-500">
-              This is a computer-generated salary slip and does not require a signature.
-            </p>
-            <p className="text-xs text-gray-500 mt-1">
-              Generated on {new Date().toLocaleDateString('en-IN', {
-                day: 'numeric',
-                month: 'long',
-                year: 'numeric',
-                hour: '2-digit',
-                minute: '2-digit'
-              })}
-            </p>
-          </div>
-        </div>
-      </motion.div>
-    </motion.div>
-  )}
-</AnimatePresence>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
     </div>
   )

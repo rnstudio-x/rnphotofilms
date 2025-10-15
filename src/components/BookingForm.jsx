@@ -130,7 +130,7 @@ const handleSubmit = async () => {
   
   try {
     // ✅ Your deployed Google Apps Script URL
-    const GAS_URL = 'https://script.google.com/macros/s/AKfycbz4wssec5UEI6Aj6rRKtvyuIH-sNJESEY7ebtdA72tczw2OKOv8ojyvu6J6s7Yi3WGd/exec'
+    const GAS_URL = 'https://script.google.com/macros/s/AKfycbxHaKALCaoB5BL781EqV62L9dCMo6AIh9QyrrVfUNkVH7e8mTiVW_4fMWwzpbSqrc3y/exec'
     
     // Prepare data
     const submitData = {

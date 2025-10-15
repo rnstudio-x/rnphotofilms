@@ -16,7 +16,11 @@ import PhotographersManager from './Components/PhotographersManager'
 import AttendanceTracker from './Components/AttendanceTracker'
 import ExpensesManager from './Components/ExpensesManager'
 import SalaryProcessor from './Components/SalaryProcessor'
+import RemindersManager from './Components/RemindersManager'
 import ReportsAnalytics from './Components/ReportsAnalytics'
+import ContractGenerator from './Components/ContractGenerator'
+import InvoiceGenerator from './Components/InvoiceGenerator'
+import ProposalGenerator from './Components/ProposalGenerator'
 import Settings from './Components/Settings'
 
 const CRMDashboard = () => {
@@ -46,7 +50,11 @@ const CRMDashboard = () => {
     { id: 'attendance', label: 'Attendance', icon: <FaClipboardCheck />, path: '/crm/attendance' },
     { id: 'expenses', label: 'Expenses', icon: <FaMoneyBillWave />, path: '/crm/expenses' },
     { id: 'salary', label: 'Salary', icon: <FaCalculator />, path: '/crm/salary' },
+    {id: 'reminders', label: 'Reminders', icon: <FaClipboardCheck />, path: '/crm/reminders' },
     { id: 'reports', label: 'Reports', icon: <FaChartLine />, path: '/crm/reports' },
+    {id: 'contracts', label: 'Contracts', icon: <FaClipboardCheck />, path: '/crm/contracts' },
+    {id: 'invoices', label: 'Invoices', icon: <FaClipboardCheck />, path: '/crm/invoices' },
+    {id: 'proposals', label: 'Proposals', icon: <FaClipboardCheck />, path: '/crm/proposals' },
     { id: 'settings', label: 'Settings', icon: <FaCog />, path: '/crm/settings' },
   ]
 
@@ -306,7 +314,11 @@ const CRMDashboard = () => {
             <Route path="/attendance" element={<AttendanceTracker />} />
             <Route path="/expenses" element={<ExpensesManager />} />
             <Route path="/salary" element={<SalaryProcessor />} />
+            <Route path="/reminders" element={<RemindersManager />} />
             <Route path="/reports" element={<ReportsAnalytics />} />
+            <Route path="/contracts" element={<ContractGenerator />} />
+            <Route path="/invoices" element={<InvoiceGenerator />} />
+            <Route path="/proposals" element={<ProposalGenerator />} />
             <Route path="/settings" element={<Settings />} />
             <Route path="*" element={<Navigate to="/crm" replace />} />
           </Routes>

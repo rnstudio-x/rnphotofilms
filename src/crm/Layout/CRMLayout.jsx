@@ -12,7 +12,9 @@ import PhotographersManager from './PhotographersManager'
 import AttendanceTracker from './AttendanceTracker'
 import ExpensesManager from './ExpensesManager'
 import SalaryProcessor from './SalaryProcessor'
+import RemindersManager from '../Components/RemindersManager'
 import ReportsAnalytics from './ReportsAnalytics'
+import ContractGenerator from '../Components/ContractGenerator'
 import Settings from './Settings'
 
 const CRMLayout = () => {
@@ -34,7 +36,11 @@ const CRMLayout = () => {
             <Route path="/attendance" element={<AttendanceTracker />} />
             <Route path="/expenses" element={<ExpensesManager />} />
             <Route path="/salary" element={<SalaryProcessor />} />
+            <Route path="/reminders" element={<RemindersManager />} />
             <Route path="/reports" element={<ReportsAnalytics />} />
+            <Route path="/contracts" element={<ContractGenerator />} />
+            <Route path="/invoices" element={<InvoiceGenerator />} />
+            <Route path="/proposals" element={<ProposalGenerator />} />
             <Route path="/settings" element={<Settings />} />
           </Routes>
         </main>
