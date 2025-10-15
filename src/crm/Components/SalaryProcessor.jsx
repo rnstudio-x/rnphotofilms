@@ -51,7 +51,7 @@ const SalaryProcessor = () => {
     notes: ''
   })
 
-  const GAS_URL = 'https://script.google.com/macros/s/AKfycbxor8ZV3Meq7lo0DBZ68wn8WZg_R1rF3W7T5AD5AaRsAqLzfUHsmgPjU8cr1OSQINw8Tg/exec'
+  const GAS_URL = 'https://script.google.com/macros/s/AKfycbyCFoBNyXT8fmTmlG9RwMO7QVgcuaVpgEUynu-hbG4Hl-zVJf09ArlCbSXNhBX9jDUcpg/exec'
 
   // ==================== DATA FETCHING ====================
   useEffect(() => {

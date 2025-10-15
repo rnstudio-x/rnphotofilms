@@ -49,7 +49,7 @@ const InvoiceGenerator = () => {
     terms: 'Payment due within 7 days. Late payments may incur additional charges.'
   })
 
-  const GAS_URL = 'https://script.google.com/macros/s/AKfycbwxyaAf6HIacRbgCE8RENZG4Nd_IiLGXikYV4raGhn8Q8g8gwTT-A0J77DrpGP46ulE9Q/exec'
+  const GAS_URL = 'https://script.google.com/macros/s/AKfycbyCFoBNyXT8fmTmlG9RwMO7QVgcuaVpgEUynu-hbG4Hl-zVJf09ArlCbSXNhBX9jDUcpg/exec'
 
   // ==================== DATA FETCHING ====================
   useEffect(() => {
@@ -234,7 +234,7 @@ const InvoiceGenerator = () => {
   doc.setFontSize(11)
   doc.setFont('helvetica', 'normal')
   doc.text('Professional Photography & Videography', 15, 32)
-  doc.text('Email: rnstudio.x@gmail.com | Phone: +91 XXXXXXXXXX', 15, 38)
+  doc.text('Email: rnstudio.x@gmail.com | Phone: +91 8239372489', 15, 38)
   
   // Invoice Title
   doc.setTextColor(0, 0, 0)
@@ -407,7 +407,7 @@ const InvoiceGenerator = () => {
   
   return doc
 }
-
+    // ==================== HANDLERS ====================
 
   const handlePreviewInvoice = () => {
     const doc = generateInvoicePDF()

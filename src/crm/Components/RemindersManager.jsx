@@ -33,7 +33,7 @@ const RemindersManager = () => {
     message: ''
   })
 
-  const GAS_URL = 'https://script.google.com/macros/s/AKfycbxHaKALCaoB5BL781EqV62L9dCMo6AIh9QyrrVfUNkVH7e8mTiVW_4fMWwzpbSqrc3y/exec'
+  const GAS_URL = 'https://script.google.com/macros/s/AKfycbyCFoBNyXT8fmTmlG9RwMO7QVgcuaVpgEUynu-hbG4Hl-zVJf09ArlCbSXNhBX9jDUcpg/exec'
 
   // ==================== DATA FETCHING ====================
   useEffect(() => {

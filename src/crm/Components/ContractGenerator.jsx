@@ -39,7 +39,7 @@ const ContractGenerator = () => {
     additionalNotes: ''
   })
 
-  const GAS_URL = 'https://script.google.com/macros/s/AKfycbxi6nrVP676nRlRbIx3Bgm4MhMkkWWDUzR1m-gHGWa39PsyhOzmI8MMICo451w4LEjm/exec'
+  const GAS_URL = 'https://script.google.com/macros/s/AKfycbyCFoBNyXT8fmTmlG9RwMO7QVgcuaVpgEUynu-hbG4Hl-zVJf09ArlCbSXNhBX9jDUcpg/exec'
 
   // Contract Templates
   const contractTemplates = [

@@ -43,7 +43,7 @@ const PaymentTracker = () => {
     overduePayments: 0
   })
 
-  const GAS_URL = 'https://script.google.com/macros/s/AKfycbzYVCIDlUljIZq96CG_YuxWjPL7cS-yHWZxXibNwF8O0lzAIfKgj8QNrFs6cfGoCpuFqg/exec'
+  const GAS_URL = 'https://script.google.com/macros/s/AKfycbyCFoBNyXT8fmTmlG9RwMO7QVgcuaVpgEUynu-hbG4Hl-zVJf09ArlCbSXNhBX9jDUcpg/exec'
 
   // Fetch Data
   useEffect(() => {

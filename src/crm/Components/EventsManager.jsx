@@ -45,7 +45,7 @@ const EventsManager = () => {
     status: 'Scheduled'
   })
 
-  const GAS_URL = 'https://script.google.com/macros/s/AKfycbz4wssec5UEI6Aj6rRKtvyuIH-sNJESEY7ebtdA72tczw2OKOv8ojyvu6J6s7Yi3WGd/exec'
+  const GAS_URL = 'https://script.google.com/macros/s/AKfycbyCFoBNyXT8fmTmlG9RwMO7QVgcuaVpgEUynu-hbG4Hl-zVJf09ArlCbSXNhBX9jDUcpg/exec'
 
   // Data Fetching
   useEffect(() => {

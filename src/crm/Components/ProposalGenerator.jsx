@@ -1,95 +1,194 @@
 import React, { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
-  FaFileInvoice, FaDownload, FaEnvelope, FaEye, FaEdit,
-  FaUser, FaCalendarAlt, FaMoneyBillWave, FaPhone,
-  FaTimes, FaSave, FaCheckCircle, FaPrint, FaPlus,
-  FaCalculator, FaPercentage, FaReceipt
+  FaFileAlt, FaDownload, FaEnvelope, FaEye, FaImage,
+  FaUser, FaCalendarAlt, FaMapMarkerAlt, FaPhone,
+  FaTimes, FaSave, FaCheckCircle, FaStar, FaAward,
+  FaCamera, FaVideo, FaEdit, FaPlus, FaMinus
 } from 'react-icons/fa'
 import jsPDF from 'jspdf'
-import 'jspdf-autotable'
 
 const ProposalGenerator = () => {
   // ==================== STATE MANAGEMENT ====================
-  const [events, setEvents] = useState([])
-  const [payments, setPayments] = useState([])
-  const [invoices, setInvoices] = useState([])
+  const [leads, setLeads] = useState([])
+  const [proposals, setProposals] = useState([])
   const [loading, setLoading] = useState(true)
   
   const [isGenerateModalOpen, setIsGenerateModalOpen] = useState(false)
   const [isPreviewModalOpen, setIsPreviewModalOpen] = useState(false)
-  const [selectedEvent, setSelectedEvent] = useState(null)
+  const [selectedLead, setSelectedLead] = useState(null)
   const [pdfBlob, setPdfBlob] = useState(null)
   
-  // Invoice Form State
-  const [invoiceData, setInvoiceData] = useState({
-    invoiceNumber: '',
-    invoiceDate: new Date().toISOString().split('T')[0],
+  // Proposal Form State
+  const [proposalData, setProposalData] = useState({
+    proposalNumber: '',
+    proposalDate: new Date().toISOString().split('T')[0],
+    validUntil: '',
     clientName: '',
     clientEmail: '',
     clientPhone: '',
-    clientAddress: '',
     eventType: '',
     eventDate: '',
-    items: [
-      { description: '', quantity: 1, rate: 0, amount: 0 }
+    eventVenue: '',
+    packages: [
+      {
+        name: 'Basic Package',
+        price: 0,
+        features: [
+          'Full day coverage',
+          'Professional photographer',
+          'Edited photos (200+)',
+          'Online gallery'
+        ],
+        selected: false
+      }
     ],
-    subtotal: 0,
-    discount: 0,
-    discountType: 'percentage', // percentage or fixed
-    taxRate: 18, // GST 18%
-    taxAmount: 0,
-    totalAmount: 0,
-    paidAmount: 0,
-    balanceAmount: 0,
-    paymentStatus: 'Pending',
-    notes: '',
-    terms: 'Payment due within 7 days. Late payments may incur additional charges.'
+    customization: '',
+    additionalServices: '',
+    portfolioHighlights: 'Over 500+ successful projects completed',
+    aboutUs: 'RN PhotoFilms is a leading photography and videography service provider with years of experience in capturing precious moments.',
+    terms: 'Payment terms: 30% advance, 40% on event day, 30% on delivery. Cancellation charges apply.',
+    notes: ''
   })
 
-  const GAS_URL = 'https://script.google.com/macros/s/YOUR_DEPLOYMENT_ID/exec'
+  const GAS_URL = 'https://script.google.com/macros/s/AKfycbyCFoBNyXT8fmTmlG9RwMO7QVgcuaVpgEUynu-hbG4Hl-zVJf09ArlCbSXNhBX9jDUcpg/exec'
+
+  // Package Templates
+  const packageTemplates = {
+    Wedding: [
+      {
+        name: 'Silver Package',
+        price: 45000,
+        features: [
+          'Full day coverage (12 hours)',
+          '1 Professional photographer',
+          '1 Videographer',
+          'Edited photos (400+)',
+          'Highlight video (5-7 min)',
+          'Online gallery',
+          'USB drive with all files'
+        ],
+        selected: false
+      },
+      {
+        name: 'Gold Package',
+        price: 75000,
+        features: [
+          '2 day coverage',
+          '2 Professional photographers',
+          '2 Videographers',
+          'Edited photos (800+)',
+          'Cinematic video (15-20 min)',
+          'Highlight reel (5-7 min)',
+          'Drone shots',
+          'Photo album (40 pages)',
+          'Online gallery',
+          'USB drive + cloud storage'
+        ],
+        selected: false
+      },
+      {
+        name: 'Platinum Package',
+        price: 125000,
+        features: [
+          'Complete wedding coverage (3 days)',
+          '3 Professional photographers',
+          '3 Videographers',
+          'Edited photos (1500+)',
+          'Full movie (30-40 min)',
+          'Highlight reel (8-10 min)',
+          'Drone shots',
+          'Pre-wedding shoot',
+          'Photo album (60 pages)',
+          'Photobook',
+          'Same day edit video',
+          'Online gallery',
+          'Premium packaging'
+        ],
+        selected: false
+      }
+    ],
+    Event: [
+      {
+        name: 'Basic Event Package',
+        price: 25000,
+        features: [
+          '6 hours coverage',
+          '1 Photographer',
+          'Edited photos (300+)',
+          'Online gallery'
+        ],
+        selected: false
+      },
+      {
+        name: 'Premium Event Package',
+        price: 50000,
+        features: [
+          'Full day coverage',
+          '2 Photographers',
+          '1 Videographer',
+          'Edited photos (600+)',
+          'Event video (10-15 min)',
+          'Drone coverage',
+          'Online gallery'
+        ],
+        selected: false
+      }
+    ],
+    Commercial: [
+      {
+        name: 'Product Photography',
+        price: 15000,
+        features: [
+          'Up to 50 products',
+          'White background',
+          'Retouched images',
+          '3 day delivery'
+        ],
+        selected: false
+      },
+      {
+        name: 'Commercial Video',
+        price: 35000,
+        features: [
+          '2 day shoot',
+          'Professional crew',
+          'Edited video (2-3 min)',
+          'Music & color grading',
+          '4K resolution'
+        ],
+        selected: false
+      }
+    ]
+  }
 
   // ==================== DATA FETCHING ====================
   useEffect(() => {
     fetchData()
   }, [])
 
-  useEffect(() => {
-    calculateTotals()
-  }, [invoiceData.items, invoiceData.discount, invoiceData.discountType, invoiceData.taxRate])
-
   const fetchData = async () => {
     try {
       setLoading(true)
       
-      const eventsResponse = await fetch(GAS_URL, {
+      const leadsResponse = await fetch(GAS_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'text/plain' },
-        body: JSON.stringify({ action: 'getEvents' })
+        body: JSON.stringify({ action: 'getLeads' })
       })
-      const eventsResult = await eventsResponse.json()
-      if (eventsResult.success) {
-        setEvents(eventsResult.events || [])
+      const leadsResult = await leadsResponse.json()
+      if (leadsResult.success) {
+        setLeads(leadsResult.leads || [])
       }
 
-      const paymentsResponse = await fetch(GAS_URL, {
+      const proposalsResponse = await fetch(GAS_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'text/plain' },
-        body: JSON.stringify({ action: 'getPayments' })
+        body: JSON.stringify({ action: 'getProposals' })
       })
-      const paymentsResult = await paymentsResponse.json()
-      if (paymentsResult.success) {
-        setPayments(paymentsResult.payments || [])
-      }
-
-      const invoicesResponse = await fetch(GAS_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'text/plain' },
-        body: JSON.stringify({ action: 'getInvoices' })
-      })
-      const invoicesResult = await invoicesResponse.json()
-      if (invoicesResult.success) {
-        setInvoices(invoicesResult.invoices || [])
+      const proposalsResult = await proposalsResponse.json()
+      if (proposalsResult.success) {
+        setProposals(proposalsResult.proposals || [])
       }
     } catch (error) {
       console.error('Error fetching data:', error)
@@ -98,309 +197,258 @@ const ProposalGenerator = () => {
     }
   }
 
-  // ==================== INVOICE NUMBER GENERATION ====================
-  const generateInvoiceNumber = () => {
+  // ==================== PROPOSAL NUMBER GENERATION ====================
+  const generateProposalNumber = () => {
     const date = new Date()
     const year = date.getFullYear()
     const month = String(date.getMonth() + 1).padStart(2, '0')
     const random = Math.floor(Math.random() * 10000).toString().padStart(4, '0')
-    return `INV-${year}${month}-${random}`
+    return `PROP-${year}${month}-${random}`
   }
 
   // ==================== AUTO-FILL FUNCTIONS ====================
-  const handleSelectEvent = (event) => {
-    setSelectedEvent(event)
+  const handleSelectLead = (lead) => {
+    setSelectedLead(lead)
     
-    const invoiceNumber = generateInvoiceNumber()
+    const proposalNumber = generateProposalNumber()
+    const validUntil = new Date()
+    validUntil.setDate(validUntil.getDate() + 15) // Valid for 15 days
     
-    setInvoiceData({
-      ...invoiceData,
-      invoiceNumber: invoiceNumber,
-      clientName: event.clientName || '',
-      clientEmail: event.email || '',
-      clientPhone: event.phone || '',
-      eventType: event.eventType || '',
-      eventDate: event.eventDate || '',
-      items: [
-        {
-          description: `${event.eventType} Photography & Videography Package`,
-          quantity: 1,
-          rate: parseFloat(event.amount || 0),
-          amount: parseFloat(event.amount || 0)
-        }
-      ]
+    // Get package templates for event type
+    const eventType = lead['Event Type'] || 'Wedding'
+    const templates = packageTemplates[eventType] || packageTemplates.Wedding
+    
+    setProposalData({
+      ...proposalData,
+      proposalNumber: proposalNumber,
+      validUntil: validUntil.toISOString().split('T')[0],
+      clientName: lead['Client Name'] || '',
+      clientEmail: lead.Email || '',
+      clientPhone: lead.Phone || '',
+      eventType: eventType,
+      eventDate: lead['Event Date'] || '',
+      eventVenue: lead.Venue || '',
+      packages: templates
     })
     
     setIsGenerateModalOpen(true)
   }
 
-  // ==================== CALCULATIONS ====================
-  const calculateItemAmount = (index) => {
-    const item = invoiceData.items[index]
-    const amount = item.quantity * item.rate
-    
-    const updatedItems = [...invoiceData.items]
-    updatedItems[index] = { ...item, amount: amount }
-    
-    setInvoiceData({ ...invoiceData, items: updatedItems })
+  // ==================== PACKAGE MANAGEMENT ====================
+  const togglePackageSelection = (index) => {
+    const updatedPackages = [...proposalData.packages]
+    updatedPackages[index].selected = !updatedPackages[index].selected
+    setProposalData({ ...proposalData, packages: updatedPackages })
   }
 
-  const calculateTotals = () => {
-    // Calculate subtotal
-    const subtotal = invoiceData.items.reduce((sum, item) => sum + (item.amount || 0), 0)
-    
-    // Calculate discount
-    let discountAmount = 0
-    if (invoiceData.discountType === 'percentage') {
-      discountAmount = (subtotal * (invoiceData.discount || 0)) / 100
-    } else {
-      discountAmount = invoiceData.discount || 0
+  const addCustomPackage = () => {
+    const newPackage = {
+      name: 'Custom Package',
+      price: 0,
+      features: ['Custom feature 1', 'Custom feature 2'],
+      selected: false
     }
-    
-    // Calculate after discount
-    const afterDiscount = subtotal - discountAmount
-    
-    // Calculate tax
-    const taxAmount = (afterDiscount * (invoiceData.taxRate || 0)) / 100
-    
-    // Calculate total
-    const totalAmount = afterDiscount + taxAmount
-    
-    // Calculate balance
-    const balanceAmount = totalAmount - (invoiceData.paidAmount || 0)
-    
-    setInvoiceData(prev => ({
-      ...prev,
-      subtotal: subtotal,
-      taxAmount: taxAmount,
-      totalAmount: totalAmount,
-      balanceAmount: balanceAmount
-    }))
-  }
-
-  const addItem = () => {
-    setInvoiceData({
-      ...invoiceData,
-      items: [...invoiceData.items, { description: '', quantity: 1, rate: 0, amount: 0 }]
+    setProposalData({
+      ...proposalData,
+      packages: [...proposalData.packages, newPackage]
     })
   }
 
-  const removeItem = (index) => {
-    const updatedItems = invoiceData.items.filter((_, i) => i !== index)
-    setInvoiceData({ ...invoiceData, items: updatedItems })
+  const updatePackage = (index, field, value) => {
+    const updatedPackages = [...proposalData.packages]
+    updatedPackages[index][field] = value
+    setProposalData({ ...proposalData, packages: updatedPackages })
   }
 
-  const updateItem = (index, field, value) => {
-    const updatedItems = [...invoiceData.items]
-    updatedItems[index] = { ...updatedItems[index], [field]: value }
-    
-    // Recalculate amount if quantity or rate changes
-    if (field === 'quantity' || field === 'rate') {
-      updatedItems[index].amount = updatedItems[index].quantity * updatedItems[index].rate
-    }
-    
-    setInvoiceData({ ...invoiceData, items: updatedItems })
+  const addFeature = (packageIndex) => {
+    const updatedPackages = [...proposalData.packages]
+    updatedPackages[packageIndex].features.push('New feature')
+    setProposalData({ ...proposalData, packages: updatedPackages })
+  }
+
+  const updateFeature = (packageIndex, featureIndex, value) => {
+    const updatedPackages = [...proposalData.packages]
+    updatedPackages[packageIndex].features[featureIndex] = value
+    setProposalData({ ...proposalData, packages: updatedPackages })
+  }
+
+  const removeFeature = (packageIndex, featureIndex) => {
+    const updatedPackages = [...proposalData.packages]
+    updatedPackages[packageIndex].features.splice(featureIndex, 1)
+    setProposalData({ ...proposalData, packages: updatedPackages })
   }
 
   // ==================== PDF GENERATION ====================
-  const generateInvoicePDF = () => {
+  const generateProposalPDF = () => {
     const doc = new jsPDF()
     
-    // Company Header
+    // Cover Page
     doc.setFillColor(79, 70, 229)
-    doc.rect(0, 0, 210, 50, 'F')
+    doc.rect(0, 0, 210, 297, 'F')
     
+    // Company Logo/Name
     doc.setTextColor(255, 255, 255)
-    doc.setFontSize(32)
+    doc.setFontSize(48)
     doc.setFont('helvetica', 'bold')
-    doc.text('RN PHOTOFILMS', 15, 25)
+    doc.text('RN PHOTOFILMS', 105, 80, { align: 'center' })
     
-    doc.setFontSize(11)
+    doc.setFontSize(16)
     doc.setFont('helvetica', 'normal')
-    doc.text('Professional Photography & Videography', 15, 32)
-    doc.text('Email: rnstudio.x@gmail.com | Phone: +91 XXXXXXXXXX', 15, 38)
+    doc.text('Professional Photography & Videography', 105, 95, { align: 'center' })
     
-    // Invoice Title & Number
+    // Proposal Title
+    doc.setFontSize(36)
+    doc.setFont('helvetica', 'bold')
+    doc.text('PROPOSAL', 105, 140, { align: 'center' })
+    
+    // Client Name
+    doc.setFontSize(20)
+    doc.setFont('helvetica', 'normal')
+    doc.text(`For ${proposalData.clientName}`, 105, 160, { align: 'center' })
+    
+    // Event Type
+    doc.setFontSize(16)
+    doc.text(proposalData.eventType, 105, 175, { align: 'center' })
+    
+    // Proposal Details
+    doc.setFontSize(12)
+    doc.text(`Proposal #: ${proposalData.proposalNumber}`, 105, 230, { align: 'center' })
+    doc.text(`Date: ${new Date(proposalData.proposalDate).toLocaleDateString('en-IN')}`, 105, 240, { align: 'center' })
+    doc.text(`Valid Until: ${new Date(proposalData.validUntil).toLocaleDateString('en-IN')}`, 105, 250, { align: 'center' })
+    
+    // Page 2: About Us
+    doc.addPage()
     doc.setTextColor(0, 0, 0)
+    
+    let yPos = 30
+    
     doc.setFontSize(24)
     doc.setFont('helvetica', 'bold')
-    doc.text('INVOICE', 150, 25)
+    doc.setTextColor(79, 70, 229)
+    doc.text('About RN PhotoFilms', 15, yPos)
+    yPos += 15
     
     doc.setFontSize(11)
     doc.setFont('helvetica', 'normal')
-    doc.text(`Invoice #: ${invoiceData.invoiceNumber}`, 150, 32)
-    doc.text(`Date: ${new Date(invoiceData.invoiceDate).toLocaleDateString('en-IN')}`, 150, 38)
+    doc.setTextColor(0, 0, 0)
+    const aboutLines = doc.splitTextToSize(proposalData.aboutUs, 180)
+    doc.text(aboutLines, 15, yPos)
+    yPos += (aboutLines.length * 6) + 15
     
-    // Bill To Section
-    let yPos = 60
-    
-    doc.setFontSize(14)
+    // Portfolio Highlights
+    doc.setFontSize(18)
     doc.setFont('helvetica', 'bold')
-    doc.text('BILL TO:', 15, yPos)
-    yPos += 8
-    
-    doc.setFontSize(11)
-    doc.setFont('helvetica', 'normal')
-    doc.text(invoiceData.clientName, 15, yPos)
-    yPos += 6
-    if (invoiceData.clientEmail) {
-      doc.text(`Email: ${invoiceData.clientEmail}`, 15, yPos)
-      yPos += 6
-    }
-    if (invoiceData.clientPhone) {
-      doc.text(`Phone: ${invoiceData.clientPhone}`, 15, yPos)
-      yPos += 6
-    }
-    if (invoiceData.clientAddress) {
-      const addressLines = doc.splitTextToSize(invoiceData.clientAddress, 80)
-      doc.text(addressLines, 15, yPos)
-      yPos += (addressLines.length * 6)
-    }
-    
+    doc.setTextColor(79, 70, 229)
+    doc.text('Our Achievements', 15, yPos)
     yPos += 10
     
-    // Items Table
-    const tableData = invoiceData.items.map(item => [
-      item.description,
-      item.quantity,
-      `₹${parseFloat(item.rate).toLocaleString('en-IN')}`,
-      `₹${parseFloat(item.amount).toLocaleString('en-IN')}`
-    ])
+    doc.setFontSize(11)
+    doc.setFont('helvetica', 'normal')
+    doc.setTextColor(0, 0, 0)
+    const highlightLines = doc.splitTextToSize(proposalData.portfolioHighlights, 180)
+    doc.text(highlightLines, 15, yPos)
     
-    doc.autoTable({
-      startY: yPos,
-      head: [['Description', 'Qty', 'Rate', 'Amount']],
-      body: tableData,
-      theme: 'striped',
-      headStyles: {
-        fillColor: [79, 70, 229],
-        textColor: 255,
-        fontStyle: 'bold'
-      },
-      styles: {
-        fontSize: 10
-      },
-      columnStyles: {
-        0: { cellWidth: 100 },
-        1: { cellWidth: 20, halign: 'center' },
-        2: { cellWidth: 35, halign: 'right' },
-        3: { cellWidth: 35, halign: 'right' }
+    // Page 3+: Packages
+    proposalData.packages.forEach((pkg, index) => {
+      doc.addPage()
+      yPos = 30
+      
+      // Package Header
+      doc.setFontSize(24)
+      doc.setFont('helvetica', 'bold')
+      doc.setTextColor(79, 70, 229)
+      doc.text(pkg.name, 15, yPos)
+      yPos += 15
+      
+      // Price
+      doc.setFontSize(32)
+      doc.setTextColor(212, 165, 116)
+      doc.text(`₹${parseFloat(pkg.price).toLocaleString('en-IN')}`, 15, yPos)
+      yPos += 20
+      
+      // Features
+      doc.setFontSize(14)
+      doc.setFont('helvetica', 'bold')
+      doc.setTextColor(0, 0, 0)
+      doc.text('Package Includes:', 15, yPos)
+      yPos += 10
+      
+      doc.setFontSize(11)
+      doc.setFont('helvetica', 'normal')
+      pkg.features.forEach(feature => {
+        doc.circle(18, yPos - 2, 1.5, 'F')
+        doc.text(feature, 25, yPos)
+        yPos += 7
+      })
+      
+      if (pkg.selected) {
+        doc.setFillColor(34, 197, 94)
+        doc.rect(15, yPos + 10, 180, 10, 'F')
+        doc.setTextColor(255, 255, 255)
+        doc.setFont('helvetica', 'bold')
+        doc.text('✓ RECOMMENDED PACKAGE', 105, yPos + 17, { align: 'center' })
       }
     })
     
-    yPos = doc.lastAutoTable.finalY + 10
+    // Last Page: Terms & Contact
+    doc.addPage()
+    yPos = 30
     
-    // Totals Section
-    const totalsX = 130
-    
-    doc.setFontSize(11)
-    doc.text('Subtotal:', totalsX, yPos)
-    doc.text(`₹${invoiceData.subtotal.toLocaleString('en-IN')}`, 190, yPos, { align: 'right' })
-    yPos += 7
-    
-    if (invoiceData.discount > 0) {
-      const discountText = invoiceData.discountType === 'percentage' 
-        ? `Discount (${invoiceData.discount}%):`
-        : 'Discount:'
-      const discountAmount = invoiceData.discountType === 'percentage'
-        ? (invoiceData.subtotal * invoiceData.discount) / 100
-        : invoiceData.discount
-      
-      doc.text(discountText, totalsX, yPos)
-      doc.text(`-₹${discountAmount.toLocaleString('en-IN')}`, 190, yPos, { align: 'right' })
-      yPos += 7
-    }
-    
-    if (invoiceData.taxRate > 0) {
-      doc.text(`GST (${invoiceData.taxRate}%):`, totalsX, yPos)
-      doc.text(`₹${invoiceData.taxAmount.toLocaleString('en-IN')}`, 190, yPos, { align: 'right' })
-      yPos += 7
-    }
-    
-    // Total Amount
+    doc.setFontSize(20)
     doc.setFont('helvetica', 'bold')
-    doc.setFontSize(13)
-    doc.setFillColor(79, 70, 229)
-    doc.rect(125, yPos - 5, 70, 10, 'F')
-    doc.setTextColor(255, 255, 255)
-    doc.text('Total Amount:', totalsX, yPos)
-    doc.text(`₹${invoiceData.totalAmount.toLocaleString('en-IN')}`, 190, yPos, { align: 'right' })
+    doc.setTextColor(79, 70, 229)
+    doc.text('Terms & Conditions', 15, yPos)
     yPos += 12
     
-    doc.setTextColor(0, 0, 0)
+    doc.setFontSize(10)
     doc.setFont('helvetica', 'normal')
-    doc.setFontSize(11)
+    doc.setTextColor(0, 0, 0)
+    const termsLines = doc.splitTextToSize(proposalData.terms, 180)
+    doc.text(termsLines, 15, yPos)
+    yPos += (termsLines.length * 5) + 15
     
-    if (invoiceData.paidAmount > 0) {
-      doc.text('Paid Amount:', totalsX, yPos)
-      doc.text(`₹${invoiceData.paidAmount.toLocaleString('en-IN')}`, 190, yPos, { align: 'right' })
-      yPos += 7
-      
-      doc.setFont('helvetica', 'bold')
-      doc.setTextColor(220, 38, 38)
-      doc.text('Balance Due:', totalsX, yPos)
-      doc.text(`₹${invoiceData.balanceAmount.toLocaleString('en-IN')}`, 190, yPos, { align: 'right' })
-    }
+    // Contact Info
+    doc.setFillColor(245, 245, 245)
+    doc.rect(15, yPos, 180, 40, 'F')
+    yPos += 10
     
-    // Notes & Terms
-    yPos += 15
+    doc.setFontSize(14)
+    doc.setFont('helvetica', 'bold')
+    doc.text('Contact Us', 20, yPos)
+    yPos += 10
     
-    if (invoiceData.notes) {
-      doc.setTextColor(0, 0, 0)
-      doc.setFont('helvetica', 'bold')
-      doc.setFontSize(12)
-      doc.text('Notes:', 15, yPos)
-      yPos += 7
-      
-      doc.setFont('helvetica', 'normal')
-      doc.setFontSize(10)
-      const notesLines = doc.splitTextToSize(invoiceData.notes, 180)
-      doc.text(notesLines, 15, yPos)
-      yPos += (notesLines.length * 5) + 8
-    }
-    
-    if (invoiceData.terms) {
-      doc.setFont('helvetica', 'bold')
-      doc.setFontSize(12)
-      doc.text('Terms & Conditions:', 15, yPos)
-      yPos += 7
-      
-      doc.setFont('helvetica', 'normal')
-      doc.setFontSize(10)
-      const termsLines = doc.splitTextToSize(invoiceData.terms, 180)
-      doc.text(termsLines, 15, yPos)
-    }
-    
-    // Footer
-    doc.setFontSize(8)
-    doc.setTextColor(128, 128, 128)
-    doc.text('Thank you for your business!', 105, 285, { align: 'center' })
-    doc.text('This is a computer-generated invoice.', 105, 290, { align: 'center' })
+    doc.setFontSize(10)
+    doc.setFont('helvetica', 'normal')
+    doc.text('📧 Email: rnstudio.x@gmail.com', 20, yPos)
+    yPos += 6
+    doc.text('📱 Phone: +91 XXXXXXXXXX', 20, yPos)
+    yPos += 6
+    doc.text('🌐 Website: www.rnphotofilms.com', 20, yPos)
     
     return doc
   }
 
-  const handlePreviewInvoice = () => {
-    const doc = generateInvoicePDF()
+  const handlePreviewProposal = () => {
+    const doc = generateProposalPDF()
     const blob = doc.output('blob')
     setPdfBlob(blob)
     setIsPreviewModalOpen(true)
   }
 
-  const handleDownloadInvoice = () => {
-    const doc = generateInvoicePDF()
-    const filename = `Invoice_${invoiceData.invoiceNumber}_${invoiceData.clientName.replace(/\s+/g, '_')}.pdf`
+  const handleDownloadProposal = () => {
+    const doc = generateProposalPDF()
+    const filename = `Proposal_${proposalData.proposalNumber}_${proposalData.clientName.replace(/\s+/g, '_')}.pdf`
     doc.save(filename)
-    alert('✅ Invoice downloaded successfully!')
+    alert('✅ Proposal downloaded successfully!')
   }
 
-  const handleEmailInvoice = async () => {
-    if (!invoiceData.clientEmail) {
+  const handleEmailProposal = async () => {
+    if (!proposalData.clientEmail) {
       alert('⚠️ Client email is required!')
       return
     }
 
-    const doc = generateInvoicePDF()
+    const doc = generateProposalPDF()
     const pdfBase64 = doc.output('dataurlstring').split(',')[1]
 
     try {
@@ -408,53 +456,52 @@ const ProposalGenerator = () => {
         method: 'POST',
         headers: { 'Content-Type': 'text/plain' },
         body: JSON.stringify({
-          action: 'sendInvoiceEmail',
-          invoiceNumber: invoiceData.invoiceNumber,
-          clientName: invoiceData.clientName,
-          clientEmail: invoiceData.clientEmail,
-          totalAmount: invoiceData.totalAmount,
-          balanceAmount: invoiceData.balanceAmount,
+          action: 'sendProposalEmail',
+          proposalNumber: proposalData.proposalNumber,
+          clientName: proposalData.clientName,
+          clientEmail: proposalData.clientEmail,
+          eventType: proposalData.eventType,
           pdfData: pdfBase64,
-          filename: `Invoice_${invoiceData.invoiceNumber}.pdf`
+          filename: `Proposal_${proposalData.proposalNumber}.pdf`
         })
       })
 
       const result = await response.json()
 
       if (result.success) {
-        alert('✅ Invoice sent via email successfully!')
+        alert('✅ Proposal sent via email successfully!')
       } else {
         alert('❌ Failed to send email: ' + result.message)
       }
     } catch (error) {
       console.error('Error sending email:', error)
-      alert('❌ Failed to send invoice via email')
+      alert('❌ Failed to send proposal via email')
     }
   }
 
-  const handleSaveInvoice = async () => {
+  const handleSaveProposal = async () => {
     try {
       const response = await fetch(GAS_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'text/plain' },
         body: JSON.stringify({
-          action: 'saveInvoice',
-          ...invoiceData
+          action: 'saveProposal',
+          ...proposalData
         })
       })
 
       const result = await response.json()
 
       if (result.success) {
-        alert('✅ Invoice saved successfully!')
+        alert('✅ Proposal saved successfully!')
         setIsGenerateModalOpen(false)
         fetchData()
       } else {
-        alert('❌ Failed to save invoice: ' + result.message)
+        alert('❌ Failed to save proposal: ' + result.message)
       }
     } catch (error) {
-      console.error('Error saving invoice:', error)
-      alert('❌ Failed to save invoice')
+      console.error('Error saving proposal:', error)
+      alert('❌ Failed to save proposal')
     }
   }
 
@@ -493,66 +540,68 @@ const ProposalGenerator = () => {
       {/* Header */}
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-800 mb-2 flex items-center gap-3">
-          <FaFileInvoice className="text-blue-600" />
-          Invoice Generator
+          <FaFileAlt className="text-blue-600" />
+          Proposal Generator
         </h1>
-        <p className="text-gray-600">Create and manage professional invoices for your clients</p>
+        <p className="text-gray-600">Create stunning proposals to win more clients</p>
       </div>
 
       {/* Quick Actions */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-        {/* Select from Events */}
+        {/* Select from Leads */}
         <div className="bg-white rounded-xl shadow-md p-6">
           <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
-            <FaCalendarAlt className="text-purple-600" />
-            Select from Events
+            <FaUser className="text-blue-600" />
+            Select from Leads
           </h3>
           <div className="space-y-2 max-h-80 overflow-y-auto">
-            {events.slice(0, 15).map(event => (
+            {leads.filter(l => l.Status === 'New Lead').slice(0, 15).map(lead => (
               <button
-                key={event.id}
-                onClick={() => handleSelectEvent(event)}
-                className="w-full text-left p-4 border border-gray-200 rounded-lg hover:bg-purple-50 hover:border-purple-300 transition-colors"
+                key={lead.id}
+                onClick={() => handleSelectLead(lead)}
+                className="w-full text-left p-4 border border-gray-200 rounded-lg hover:bg-blue-50 hover:border-blue-300 transition-colors"
               >
                 <div className="flex items-center justify-between">
                   <div>
-                    <div className="font-medium text-gray-900">{event.clientName}</div>
-                    <div className="text-sm text-gray-600">{event.eventType} • {event.eventDate}</div>
+                    <div className="font-medium text-gray-900">{lead['Client Name']}</div>
+                    <div className="text-sm text-gray-600">{lead['Event Type']} • {lead['Event Date']}</div>
                   </div>
                   <div className="text-right">
-                    <div className="font-semibold text-purple-600">{formatCurrency(event.amount)}</div>
+                    <FaAward className="text-blue-600 text-xl" />
                   </div>
                 </div>
               </button>
             ))}
+            {leads.filter(l => l.Status === 'New Lead').length === 0 && (
+              <p className="text-sm text-gray-500 text-center py-4">No new leads</p>
+            )}
           </div>
         </div>
 
-        {/* Recent Invoices */}
+        {/* Recent Proposals */}
         <div className="bg-white rounded-xl shadow-md p-6">
           <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
-            <FaReceipt className="text-green-600" />
-            Recent Invoices
+            <FaFileAlt className="text-purple-600" />
+            Recent Proposals
           </h3>
           <div className="space-y-2 max-h-80 overflow-y-auto">
-            {invoices.slice(0, 10).map(invoice => (
+            {proposals.slice(0, 10).map(proposal => (
               <div
-                key={invoice.id}
+                key={proposal.id}
                 className="p-4 border border-gray-200 rounded-lg"
               >
                 <div className="flex items-center justify-between">
                   <div>
-                    <div className="font-medium text-gray-900">{invoice.invoiceNumber}</div>
-                    <div className="text-sm text-gray-600">{invoice.clientName} • {formatDate(invoice.invoiceDate)}</div>
+                    <div className="font-medium text-gray-900">{proposal.proposalNumber}</div>
+                    <div className="text-sm text-gray-600">{proposal.clientName} • {formatDate(proposal.proposalDate)}</div>
                   </div>
                   <div className="text-right">
-                    <div className="font-semibold text-green-600">{formatCurrency(invoice.totalAmount)}</div>
                     <span className={`text-xs px-2 py-1 rounded ${
-                      invoice.paymentStatus === 'Paid' ? 'bg-green-100 text-green-800' :
-                      invoice.paymentStatus === 'Partial' ? 'bg-yellow-100 text-yellow-800' :
-                      'bg-red-100 text-red-800'
+                      proposal.status === 'Accepted' ? 'bg-green-100 text-green-800' :
+                      proposal.status === 'Pending' ? 'bg-yellow-100 text-yellow-800' :
+                      'bg-gray-100 text-gray-800'
                     }`}>
-                      {invoice.paymentStatus}
+                      {proposal.status || 'Sent'}
                     </span>
                   </div>
                 </div>
@@ -566,20 +615,21 @@ const ProposalGenerator = () => {
       <div className="bg-white rounded-xl shadow-md p-6">
         <button
           onClick={() => {
-            setInvoiceData({
-              ...invoiceData,
-              invoiceNumber: generateInvoiceNumber()
+            setProposalData({
+              ...proposalData,
+              proposalNumber: generateProposalNumber(),
+              validUntil: new Date(Date.now() + 15*24*60*60*1000).toISOString().split('T')[0]
             })
             setIsGenerateModalOpen(true)
           }}
           className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-medium py-4 rounded-lg transition-all flex items-center justify-center gap-3 text-lg"
         >
-          <FaFileInvoice className="text-2xl" />
-          Generate New Invoice from Scratch
+          <FaFileAlt className="text-2xl" />
+          Create New Proposal from Scratch
         </button>
       </div>
 
-       {/* ==================== GENERATE INVOICE MODAL ==================== */}
+      {/* ==================== GENERATE PROPOSAL MODAL ==================== */}
       <AnimatePresence>
         {isGenerateModalOpen && (
           <motion.div
@@ -594,17 +644,17 @@ const ProposalGenerator = () => {
               animate={{ scale: 1, y: 0 }}
               exit={{ scale: 0.9, y: 20 }}
               onClick={(e) => e.stopPropagation()}
-              className="bg-white rounded-2xl shadow-2xl max-w-5xl w-full my-8"
+              className="bg-white rounded-2xl shadow-2xl max-w-6xl w-full my-8"
             >
               {/* Modal Header */}
               <div className="sticky top-0 bg-gradient-to-r from-blue-600 to-purple-600 text-white p-6 rounded-t-2xl z-10">
                 <div className="flex items-center justify-between">
                   <div>
                     <h2 className="text-2xl font-bold flex items-center gap-2">
-                      <FaFileInvoice />
-                      Generate Invoice
+                      <FaFileAlt />
+                      Create Proposal
                     </h2>
-                    <p className="text-blue-100 mt-1">Invoice #{invoiceData.invoiceNumber}</p>
+                    <p className="text-blue-100 mt-1">{proposalData.proposalNumber}</p>
                   </div>
                   <button
                     onClick={() => setIsGenerateModalOpen(false)}
@@ -618,30 +668,45 @@ const ProposalGenerator = () => {
               {/* Modal Body */}
               <div className="p-6 max-h-[70vh] overflow-y-auto">
                 <div className="space-y-6">
-                  {/* Invoice Details */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Invoice Number *
-                      </label>
-                      <input
-                        type="text"
-                        value={invoiceData.invoiceNumber}
-                        readOnly
-                        className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-100"
-                      />
-                    </div>
+                  {/* Basic Information */}
+                  <div className="bg-gray-50 rounded-xl p-4">
+                    <h3 className="text-lg font-bold text-gray-800 mb-4">Basic Information</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Proposal Number *
+                        </label>
+                        <input
+                          type="text"
+                          value={proposalData.proposalNumber}
+                          readOnly
+                          className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-100"
+                        />
+                      </div>
 
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Invoice Date *
-                      </label>
-                      <input
-                        type="date"
-                        value={invoiceData.invoiceDate}
-                        onChange={(e) => setInvoiceData({...invoiceData, invoiceDate: e.target.value})}
-                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                      />
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Proposal Date *
+                        </label>
+                        <input
+                          type="date"
+                          value={proposalData.proposalDate}
+                          onChange={(e) => setProposalData({...proposalData, proposalDate: e.target.value})}
+                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Valid Until *
+                        </label>
+                        <input
+                          type="date"
+                          value={proposalData.validUntil}
+                          onChange={(e) => setProposalData({...proposalData, validUntil: e.target.value})}
+                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                        />
+                      </div>
                     </div>
                   </div>
 
@@ -655,8 +720,8 @@ const ProposalGenerator = () => {
                         </label>
                         <input
                           type="text"
-                          value={invoiceData.clientName}
-                          onChange={(e) => setInvoiceData({...invoiceData, clientName: e.target.value})}
+                          value={proposalData.clientName}
+                          onChange={(e) => setProposalData({...proposalData, clientName: e.target.value})}
                           className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                           placeholder="Enter client name"
                         />
@@ -668,8 +733,8 @@ const ProposalGenerator = () => {
                         </label>
                         <input
                           type="email"
-                          value={invoiceData.clientEmail}
-                          onChange={(e) => setInvoiceData({...invoiceData, clientEmail: e.target.value})}
+                          value={proposalData.clientEmail}
+                          onChange={(e) => setProposalData({...proposalData, clientEmail: e.target.value})}
                           className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                           placeholder="client@example.com"
                         />
@@ -681,8 +746,8 @@ const ProposalGenerator = () => {
                         </label>
                         <input
                           type="tel"
-                          value={invoiceData.clientPhone}
-                          onChange={(e) => setInvoiceData({...invoiceData, clientPhone: e.target.value})}
+                          value={proposalData.clientPhone}
+                          onChange={(e) => setProposalData({...proposalData, clientPhone: e.target.value})}
                           className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                           placeholder="9876543210"
                         />
@@ -690,224 +755,161 @@ const ProposalGenerator = () => {
 
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Address
+                          Event Type
+                        </label>
+                        <select
+                          value={proposalData.eventType}
+                          onChange={(e) => setProposalData({...proposalData, eventType: e.target.value})}
+                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                        >
+                          <option value="Wedding">Wedding</option>
+                          <option value="Event">Event</option>
+                          <option value="Commercial">Commercial</option>
+                          <option value="Product">Product</option>
+                        </select>
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Event Date
+                        </label>
+                        <input
+                          type="date"
+                          value={proposalData.eventDate}
+                          onChange={(e) => setProposalData({...proposalData, eventDate: e.target.value})}
+                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Event Venue
                         </label>
                         <input
                           type="text"
-                          value={invoiceData.clientAddress}
-                          onChange={(e) => setInvoiceData({...invoiceData, clientAddress: e.target.value})}
+                          value={proposalData.eventVenue}
+                          onChange={(e) => setProposalData({...proposalData, eventVenue: e.target.value})}
                           className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                          placeholder="Client address"
+                          placeholder="Venue location"
                         />
                       </div>
                     </div>
                   </div>
 
-                  {/* Invoice Items */}
+                  {/* Packages */}
                   <div className="bg-gray-50 rounded-xl p-4">
                     <div className="flex items-center justify-between mb-4">
-                      <h3 className="text-lg font-bold text-gray-800">Invoice Items</h3>
+                      <h3 className="text-lg font-bold text-gray-800">Packages</h3>
                       <button
-                        onClick={addItem}
+                        onClick={addCustomPackage}
                         className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors flex items-center gap-2 text-sm"
                       >
                         <FaPlus />
-                        Add Item
+                        Add Package
                       </button>
                     </div>
 
-                    <div className="space-y-3">
-                      {invoiceData.items.map((item, index) => (
-                        <div key={index} className="bg-white rounded-lg p-4 border border-gray-200">
-                          <div className="grid grid-cols-12 gap-3">
-                            <div className="col-span-12 md:col-span-5">
+                    <div className="space-y-4">
+                      {proposalData.packages.map((pkg, pkgIndex) => (
+                        <div key={pkgIndex} className="bg-white rounded-lg p-4 border-2 border-gray-200">
+                          <div className="grid grid-cols-12 gap-4 mb-3">
+                            <div className="col-span-7">
                               <label className="block text-xs font-medium text-gray-600 mb-1">
-                                Description
+                                Package Name
                               </label>
                               <input
                                 type="text"
-                                value={item.description}
-                                onChange={(e) => updateItem(index, 'description', e.target.value)}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm"
-                                placeholder="Service description"
+                                value={pkg.name}
+                                onChange={(e) => updatePackage(pkgIndex, 'name', e.target.value)}
+                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                               />
                             </div>
 
-                            <div className="col-span-4 md:col-span-2">
+                            <div className="col-span-4">
                               <label className="block text-xs font-medium text-gray-600 mb-1">
-                                Qty
+                                Price (₹)
                               </label>
                               <input
                                 type="number"
-                                value={item.quantity}
-                                onChange={(e) => updateItem(index, 'quantity', parseFloat(e.target.value))}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm"
-                                min="1"
-                              />
-                            </div>
-
-                            <div className="col-span-4 md:col-span-2">
-                              <label className="block text-xs font-medium text-gray-600 mb-1">
-                                Rate (₹)
-                              </label>
-                              <input
-                                type="number"
-                                value={item.rate}
-                                onChange={(e) => updateItem(index, 'rate', parseFloat(e.target.value))}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm"
-                                min="0"
-                              />
-                            </div>
-
-                            <div className="col-span-3 md:col-span-2">
-                              <label className="block text-xs font-medium text-gray-600 mb-1">
-                                Amount
-                              </label>
-                              <input
-                                type="text"
-                                value={formatCurrency(item.amount)}
-                                readOnly
-                                className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-100 text-sm font-semibold"
+                                value={pkg.price}
+                                onChange={(e) => updatePackage(pkgIndex, 'price', parseFloat(e.target.value) || 0)}
+                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                               />
                             </div>
 
                             <div className="col-span-1 flex items-end">
                               <button
-                                onClick={() => removeItem(index)}
-                                className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                                disabled={invoiceData.items.length === 1}
+                                onClick={() => togglePackageSelection(pkgIndex)}
+                                className={`p-2 rounded-lg transition-colors ${
+                                  pkg.selected
+                                    ? 'bg-green-100 text-green-600'
+                                    : 'bg-gray-100 text-gray-400 hover:bg-gray-200'
+                                }`}
+                                title="Mark as recommended"
                               >
-                                <FaTimes />
+                                <FaStar />
                               </button>
                             </div>
+                          </div>
+
+                          <label className="block text-xs font-medium text-gray-600 mb-2">
+                            Features
+                          </label>
+                          <div className="space-y-2">
+                            {pkg.features.map((feature, featureIndex) => (
+                              <div key={featureIndex} className="flex items-center gap-2">
+                                <input
+                                  type="text"
+                                  value={feature}
+                                  onChange={(e) => updateFeature(pkgIndex, featureIndex, e.target.value)}
+                                  className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm"
+                                  placeholder="Feature description"
+                                />
+                                <button
+                                  onClick={() => removeFeature(pkgIndex, featureIndex)}
+                                  className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                                >
+                                  <FaMinus />
+                                </button>
+                              </div>
+                            ))}
+                            <button
+                              onClick={() => addFeature(pkgIndex)}
+                              className="text-blue-600 hover:text-blue-700 text-sm flex items-center gap-1"
+                            >
+                              <FaPlus /> Add Feature
+                            </button>
                           </div>
                         </div>
                       ))}
                     </div>
                   </div>
 
-                  {/* Calculations */}
-                  <div className="bg-gray-50 rounded-xl p-4">
-                    <h3 className="text-lg font-bold text-gray-800 mb-4">Calculations</h3>
-                    
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Discount Type
-                        </label>
-                        <select
-                          value={invoiceData.discountType}
-                          onChange={(e) => setInvoiceData({...invoiceData, discountType: e.target.value})}
-                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                        >
-                          <option value="percentage">Percentage (%)</option>
-                          <option value="fixed">Fixed Amount (₹)</option>
-                        </select>
-                      </div>
-
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Discount {invoiceData.discountType === 'percentage' ? '(%)' : '(₹)'}
-                        </label>
-                        <input
-                          type="number"
-                          value={invoiceData.discount}
-                          onChange={(e) => setInvoiceData({...invoiceData, discount: parseFloat(e.target.value)})}
-                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                          min="0"
-                        />
-                      </div>
-
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Tax Rate (%)
-                        </label>
-                        <input
-                          type="number"
-                          value={invoiceData.taxRate}
-                          onChange={(e) => setInvoiceData({...invoiceData, taxRate: parseFloat(e.target.value)})}
-                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                          min="0"
-                          max="100"
-                        />
-                      </div>
-                    </div>
-
-                    {/* Totals Display */}
-                    <div className="bg-white rounded-lg p-4 border-2 border-blue-200">
-                      <div className="space-y-2">
-                        <div className="flex justify-between text-sm">
-                          <span className="text-gray-600">Subtotal:</span>
-                          <span className="font-semibold">{formatCurrency(invoiceData.subtotal)}</span>
-                        </div>
-                        {invoiceData.discount > 0 && (
-                          <div className="flex justify-between text-sm">
-                            <span className="text-gray-600">Discount:</span>
-                            <span className="font-semibold text-red-600">
-                              -{formatCurrency(
-                                invoiceData.discountType === 'percentage'
-                                  ? (invoiceData.subtotal * invoiceData.discount) / 100
-                                  : invoiceData.discount
-                              )}
-                            </span>
-                          </div>
-                        )}
-                        {invoiceData.taxRate > 0 && (
-                          <div className="flex justify-between text-sm">
-                            <span className="text-gray-600">Tax ({invoiceData.taxRate}%):</span>
-                            <span className="font-semibold">{formatCurrency(invoiceData.taxAmount)}</span>
-                          </div>
-                        )}
-                        <div className="border-t-2 border-gray-200 pt-2">
-                          <div className="flex justify-between">
-                            <span className="font-bold text-gray-900">Total Amount:</span>
-                            <span className="font-bold text-blue-600 text-lg">{formatCurrency(invoiceData.totalAmount)}</span>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Payment Info */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Paid Amount (₹)
-                        </label>
-                        <input
-                          type="number"
-                          value={invoiceData.paidAmount}
-                          onChange={(e) => setInvoiceData({...invoiceData, paidAmount: parseFloat(e.target.value)})}
-                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                          min="0"
-                        />
-                      </div>
-
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Balance Due (₹)
-                        </label>
-                        <input
-                          type="text"
-                          value={formatCurrency(invoiceData.balanceAmount)}
-                          readOnly
-                          className="w-full px-4 py-3 border-2 border-red-300 rounded-lg bg-red-50 font-bold text-red-600"
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Notes & Terms */}
+                  {/* Additional Details */}
                   <div className="grid grid-cols-1 gap-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Notes
+                        About Us
                       </label>
                       <textarea
-                        value={invoiceData.notes}
-                        onChange={(e) => setInvoiceData({...invoiceData, notes: e.target.value})}
+                        value={proposalData.aboutUs}
+                        onChange={(e) => setProposalData({...proposalData, aboutUs: e.target.value})}
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                        rows="3"
+                        placeholder="Company description..."
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Portfolio Highlights
+                      </label>
+                      <textarea
+                        value={proposalData.portfolioHighlights}
+                        onChange={(e) => setProposalData({...proposalData, portfolioHighlights: e.target.value})}
                         className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                         rows="2"
-                        placeholder="Any additional notes..."
+                        placeholder="Key achievements and stats..."
                       />
                     </div>
 
@@ -916,11 +918,11 @@ const ProposalGenerator = () => {
                         Terms & Conditions
                       </label>
                       <textarea
-                        value={invoiceData.terms}
-                        onChange={(e) => setInvoiceData({...invoiceData, terms: e.target.value})}
+                        value={proposalData.terms}
+                        onChange={(e) => setProposalData({...proposalData, terms: e.target.value})}
                         className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                        rows="2"
-                        placeholder="Payment terms..."
+                        rows="3"
+                        placeholder="Payment terms, cancellation policy..."
                       />
                     </div>
                   </div>
@@ -930,28 +932,28 @@ const ProposalGenerator = () => {
               {/* Modal Footer */}
               <div className="bg-gray-50 p-6 rounded-b-2xl flex flex-wrap gap-3">
                 <button
-                  onClick={handlePreviewInvoice}
+                  onClick={handlePreviewProposal}
                   className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-6 rounded-lg transition-colors flex items-center justify-center gap-2"
                 >
                   <FaEye />
                   Preview
                 </button>
                 <button
-                  onClick={handleDownloadInvoice}
+                  onClick={handleDownloadProposal}
                   className="flex-1 bg-green-600 hover:bg-green-700 text-white font-medium py-3 px-6 rounded-lg transition-colors flex items-center justify-center gap-2"
                 >
                   <FaDownload />
                   Download
                 </button>
                 <button
-                  onClick={handleEmailInvoice}
+                  onClick={handleEmailProposal}
                   className="flex-1 bg-purple-600 hover:bg-purple-700 text-white font-medium py-3 px-6 rounded-lg transition-colors flex items-center justify-center gap-2"
                 >
                   <FaEnvelope />
                   Email
                 </button>
                 <button
-                  onClick={handleSaveInvoice}
+                  onClick={handleSaveProposal}
                   className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-3 px-6 rounded-lg transition-colors flex items-center justify-center gap-2"
                 >
                   <FaSave />
@@ -983,8 +985,8 @@ const ProposalGenerator = () => {
               {/* Preview Header */}
               <div className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white p-6 rounded-t-2xl flex items-center justify-between">
                 <div>
-                  <h2 className="text-2xl font-bold">Invoice Preview</h2>
-                  <p className="text-indigo-100 text-sm mt-1">#{invoiceData.invoiceNumber}</p>
+                  <h2 className="text-2xl font-bold">Proposal Preview</h2>
+                  <p className="text-indigo-100 text-sm mt-1">{proposalData.proposalNumber}</p>
                 </div>
                 <button
                   onClick={() => setIsPreviewModalOpen(false)}
@@ -999,21 +1001,21 @@ const ProposalGenerator = () => {
                 <iframe
                   src={URL.createObjectURL(pdfBlob)}
                   className="w-full h-full min-h-[600px] border border-gray-300 rounded-lg"
-                  title="Invoice Preview"
+                  title="Proposal Preview"
                 />
               </div>
 
               {/* Preview Footer */}
               <div className="bg-gray-50 p-4 rounded-b-2xl flex gap-3">
                 <button
-                  onClick={handleDownloadInvoice}
+                  onClick={handleDownloadProposal}
                   className="flex-1 bg-green-600 hover:bg-green-700 text-white font-medium py-3 px-6 rounded-lg transition-colors flex items-center justify-center gap-2"
                 >
                   <FaDownload />
                   Download
                 </button>
                 <button
-                  onClick={handleEmailInvoice}
+                  onClick={handleEmailProposal}
                   className="flex-1 bg-purple-600 hover:bg-purple-700 text-white font-medium py-3 px-6 rounded-lg transition-colors flex items-center justify-center gap-2"
                 >
                   <FaEnvelope />
