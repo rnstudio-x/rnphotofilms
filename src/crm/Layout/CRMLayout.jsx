@@ -41,6 +41,7 @@ const CRMLayout = () => {
             <Route path="/contracts" element={<ContractGenerator />} />
             <Route path="/invoices" element={<InvoiceGenerator />} />
             <Route path="/proposals" element={<ProposalGenerator />} />
+            <Route path="/calendar" element={<ScheduleCalendar />} />
             <Route path="/settings" element={<Settings />} />
           </Routes>
         </main>

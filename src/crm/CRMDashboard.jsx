@@ -21,6 +21,7 @@ import ReportsAnalytics from './Components/ReportsAnalytics'
 import ContractGenerator from './Components/ContractGenerator'
 import InvoiceGenerator from './Components/InvoiceGenerator'
 import ProposalGenerator from './Components/ProposalGenerator'
+import ScheduleCalendar from './Components/ScheduleCalendar'
 import Settings from './Components/Settings'
 
 const CRMDashboard = () => {
@@ -29,6 +30,15 @@ const CRMDashboard = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const navigate = useNavigate()
   const location = useLocation()
+  // In your App.jsx (or wherever Dashboard is rendered)
+
+const [activeModule, setActiveModule] = useState('dashboard')
+
+// When rendering Dashboard:
+{activeModule === 'dashboard' && (
+  <Dashboard onNavigate={(module) => setActiveModule(module)} />
+)}
+
 
   // Check authentication on mount
   useEffect(() => {
@@ -55,6 +65,7 @@ const CRMDashboard = () => {
     {id: 'contracts', label: 'Contracts', icon: <FaClipboardCheck />, path: '/crm/contracts' },
     {id: 'invoices', label: 'Invoices', icon: <FaClipboardCheck />, path: '/crm/invoices' },
     {id: 'proposals', label: 'Proposals', icon: <FaClipboardCheck />, path: '/crm/proposals' },
+    {id: 'calendar', label: 'Calendar', icon: <FaCalendarAlt />, path: '/crm/calendar' },
     { id: 'settings', label: 'Settings', icon: <FaCog />, path: '/crm/settings' },
   ]
 
@@ -306,7 +317,7 @@ const CRMDashboard = () => {
         {/* Content Area - ALL ROUTES ADDED */}
         <main className="flex-1 overflow-y-auto p-6 bg-gray-50">
           <Routes>
-            <Route path="/" element={<Dashboard />} />
+            <Route path="/" element={<Dashboard onNavigate={(module) => navigate(module)} />} />
             <Route path="/leads" element={<LeadsManager />} />
             <Route path="/events" element={<EventsManager />} />
             <Route path="/payments" element={<PaymentTracker />} />
@@ -319,6 +330,7 @@ const CRMDashboard = () => {
             <Route path="/contracts" element={<ContractGenerator />} />
             <Route path="/invoices" element={<InvoiceGenerator />} />
             <Route path="/proposals" element={<ProposalGenerator />} />
+            <Route path="/calendar" element={<ScheduleCalendar />} />
             <Route path="/settings" element={<Settings />} />
             <Route path="*" element={<Navigate to="/crm" replace />} />
           </Routes>

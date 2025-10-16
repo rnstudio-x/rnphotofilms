@@ -12,5 +12,6 @@ const menuItems = [
   {name: 'Contracts', icon: FaFileContract, path: '/crm/contracts' },
   {name: 'Invoices', icon: FaFileInvoiceDollar, path: '/crm/invoices' },
   {name: 'Proposals', icon: FaFileSignature, path: '/crm/proposals' },
+  {name: 'Calendar', icon: FaCalendarAlt, path: '/crm/calendar' },
   { name: 'Settings', icon: FaCog, path: '/crm/settings' }
 ]
