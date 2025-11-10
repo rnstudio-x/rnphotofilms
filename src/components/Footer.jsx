@@ -65,8 +65,8 @@ const Footer = () => {
                       navigate('/client/login')
                     }
                   }}
-  className="flex items-center gap-2 hover:text-blue-400 transition-colors group"
->
+                    className="flex items-center gap-2 hover:text-blue-400 transition-colors group"
+            >
   <FaUser className="group-hover:scale-110 transition-transform" />
   <span>Client Portal</span>
 </button>

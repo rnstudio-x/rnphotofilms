@@ -5,7 +5,7 @@ import {
   FaImages, FaDownload, FaExpand, FaTimes, FaCheckCircle, 
   FaArrowLeft, FaSearch, FaCloudDownloadAlt, 
   FaFolder, FaHeart, FaCamera, FaStar, FaTh, FaThLarge,
-  FaChevronLeft, FaChevronRight, FaPlay, FaPause
+  FaChevronLeft, FaChevronRight, FaPlay, FaPause, FaVolumeUp, FaVolumeMute, FaMusic
 } from 'react-icons/fa'
 
 const ClientGallery = () => {
@@ -25,12 +25,23 @@ const ClientGallery = () => {
   const [slideshowSpeed, setSlideshowSpeed] = useState(3000)
   const [preloadedImages, setPreloadedImages] = useState({})
   const [imageTransitioning, setImageTransitioning] = useState(false)
+  
+  // ✅ YE 3 STATES ADD KARO
+  const [isMusicPlaying, setIsMusicPlaying] = useState(false)
+  const [musicVolume, setMusicVolume] = useState(0.5)
+  const [isMuted, setIsMuted] = useState(false)
+
 
   const hasFetched = useRef(false)
   const slideshowInterval = useRef(null)
   const imageCache = useRef({})
+  const audioRef = useRef(null)
 
   const GAS_URL = 'https://script.google.com/macros/s/AKfycby6Ph2hqgkYfoeMu_rIrvPvf0dU-NoG8N8vXACD8O9pWqGvdxFbXZ176XZRhukvaBDUFg/exec'
+
+  const MUSIC_FILE = '/music/slideshow-music.mp3'
+  // '/music/romantic-wedding.mp3',
+  // '/music/cinematic-theme.mp3'
 
   const filteredPhotos = photos.filter(photo =>
     photo.name.toLowerCase().includes(searchQuery.toLowerCase())
@@ -59,6 +70,21 @@ const ClientGallery = () => {
       }
     }
   }
+
+    // ✅ YE COMPLETE USEEFFECT ADD KARO
+  useEffect(() => {
+    audioRef.current = new Audio(MUSIC_FILE)
+    audioRef.current.loop = true
+    audioRef.current.volume = musicVolume
+
+    return () => {
+      if (audioRef.current) {
+        audioRef.current.pause()
+        audioRef.current = null
+      }
+    }
+  }, [])
+
 useEffect(() => {
     checkAuth()
     // ✅ Hide navbar
@@ -87,48 +113,68 @@ useEffect(() => {
       if (navbar) navbar.style.display = ''
       stopSlideshow()
     }
+    // ✅ Stop music on unmount
+  if (audioRef.current) {
+    audioRef.current.pause()
+  }
   }, [])
 
   useEffect(() => {
-    const handleKeyPress = (e) => {
-      if (!selectedPhoto) return
-      
-      if (e.key === 'ArrowLeft') prevPhoto()
-      if (e.key === 'ArrowRight') nextPhoto()
-      if (e.key === 'Escape') {
-        setSelectedPhoto(null)
-        stopSlideshow()
-      }
-      if (e.key === ' ') {
-        e.preventDefault()
-        toggleSlideshow()
-      }
+  const handleKeyPress = (e) => {
+    if (!selectedPhoto) return
+    
+    if (e.key === 'ArrowLeft') prevPhoto()
+    if (e.key === 'ArrowRight') nextPhoto()
+    if (e.key === 'Escape') {
+      setSelectedPhoto(null)
+      stopSlideshow()
     }
+    if (e.key === ' ') {
+      e.preventDefault()
+      toggleSlideshow()
+    }
+    // ✅ YE ADD KARO
+    if (e.key === 'm' || e.key === 'M') {
+      toggleMusic()
+    }
+  }
 
-    window.addEventListener('keydown', handleKeyPress)
-    return () => window.removeEventListener('keydown', handleKeyPress)
-  }, [selectedPhoto, currentImageIndex, filteredPhotos, isSlideshow])
+  window.addEventListener('keydown', handleKeyPress)
+  return () => window.removeEventListener('keydown', handleKeyPress)
+}, [selectedPhoto, currentImageIndex, filteredPhotos, isSlideshow, isMusicPlaying])
+
 
   // ✅ Optimized slideshow with preloading
-  useEffect(() => {
-    if (isSlideshow && selectedPhoto) {
-      preloadImages(currentImageIndex)
-      
-      slideshowInterval.current = setInterval(() => {
-        nextPhoto()
-      }, slideshowSpeed)
-    } else {
-      if (slideshowInterval.current) {
-        clearInterval(slideshowInterval.current)
-      }
+useEffect(() => {
+  if (isSlideshow && selectedPhoto) {
+    preloadImages(currentImageIndex)
+    
+    // ✅ Auto-play music
+    if (!isMusicPlaying && audioRef.current) {
+      toggleMusic()
     }
     
-    return () => {
-      if (slideshowInterval.current) {
-        clearInterval(slideshowInterval.current)
-      }
+    slideshowInterval.current = setInterval(() => {
+      nextPhoto()
+    }, slideshowSpeed)
+  } else {
+    if (slideshowInterval.current) {
+      clearInterval(slideshowInterval.current)
     }
-  }, [isSlideshow, selectedPhoto, slideshowSpeed, currentImageIndex])
+    // ✅ Pause music when slideshow stops
+    if (isMusicPlaying && audioRef.current) {
+      audioRef.current.pause()
+      setIsMusicPlaying(false)
+    }
+  }
+  
+  return () => {
+    if (slideshowInterval.current) {
+      clearInterval(slideshowInterval.current)
+    }
+  }
+}, [isSlideshow, selectedPhoto, slideshowSpeed, currentImageIndex])
+
 
   // ✅ Preload when lightbox opens
   useEffect(() => {
@@ -283,6 +329,35 @@ useEffect(() => {
     return patterns[index % patterns.length]
   }
 
+  // ✅ YE 3 FUNCTIONS ADD KARO
+  const toggleMusic = () => {
+    if (!audioRef.current) return
+
+    if (isMusicPlaying) {
+      audioRef.current.pause()
+      setIsMusicPlaying(false)
+    } else {
+      audioRef.current.play()
+        .then(() => setIsMusicPlaying(true))
+        .catch(err => console.log('Audio play failed:', err))
+    }
+  }
+
+  const handleVolumeChange = (e) => {
+    const newVolume = parseFloat(e.target.value)
+    setMusicVolume(newVolume)
+    if (audioRef.current) {
+      audioRef.current.volume = newVolume
+    }
+  }
+
+  const toggleMute = () => {
+    if (audioRef.current) {
+      audioRef.current.muted = !isMuted
+      setIsMuted(!isMuted)
+    }
+  }
+
   if (loading) {
     return (
       <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center">
@@ -432,6 +507,19 @@ useEffect(() => {
             </div>
 
             <div className="flex gap-3 flex-wrap items-center">
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={toggleMusic}
+                className={`px-6 py-3 rounded-xl transition-all flex items-center gap-2 font-medium text-sm shadow-lg ${
+                  isMusicPlaying
+                    ? 'bg-gradient-to-r from-green-500 to-emerald-500 text-white shadow-green-500/50'
+                    : 'bg-gradient-to-r from-gray-600 to-gray-700 text-white shadow-gray-500/50'
+                }`}
+              >
+                <FaMusic className={isMusicPlaying ? 'animate-pulse' : ''} /> 
+                {isMusicPlaying ? 'Music On' : 'Music Off'}
+              </motion.button>
               <motion.button
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
@@ -626,6 +714,27 @@ useEffect(() => {
                   </p>
                 </div>
 
+                <div className="flex items-center gap-2 px-4 py-2 bg-white/10 rounded-xl border border-white/20">
+                    <motion.button
+                      whileHover={{ scale: 1.1 }}
+                      whileTap={{ scale: 0.9 }}
+                      onClick={(e) => { e.stopPropagation(); toggleMute(); }}
+                      className="text-white"
+                    >
+                      {isMuted ? <FaVolumeMute className="text-xl" /> : <FaVolumeUp className="text-xl" />}
+                    </motion.button>
+                    <input
+                      type="range"
+                      min="0"
+                      max="1"
+                      step="0.1"
+                      value={musicVolume}
+                      onChange={handleVolumeChange}
+                      onClick={(e) => e.stopPropagation()}
+                      className="w-20 accent-yellow-500"
+                    />
+                  </div>
+
                 <div className="flex gap-3">
                   <select
                     value={slideshowSpeed}
@@ -726,7 +835,7 @@ useEffect(() => {
               </div>
 
               <p className="text-center text-sm text-gray-300 mt-4">
-                ← → Navigate • SPACE Play/Pause • ESC Close • Perfect for SmartTV 📺
+                ← → Navigate • SPACE Play/Pause • M Music • ESC Close • Perfect for SmartTV 📺🎵
               </p>
             </motion.div>
           </motion.div>
