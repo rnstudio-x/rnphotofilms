@@ -39,7 +39,9 @@ const ClientGallery = () => {
 
   const GAS_URL = 'https://script.google.com/macros/s/AKfycby6Ph2hqgkYfoeMu_rIrvPvf0dU-NoG8N8vXACD8O9pWqGvdxFbXZ176XZRhukvaBDUFg/exec'
 
-  const MUSIC_FILE = '/music/slideshow-music.mp3'
+// ✅ Working URL - Copyright-free music
+const MUSIC_FILE = 'https://cdn.pixabay.com/audio/2025/10/01/audio_04ebd94964.mp3'
+
   // '/music/romantic-wedding.mp3',
   // '/music/cinematic-theme.mp3'
 
@@ -72,18 +74,21 @@ const ClientGallery = () => {
   }
 
     // ✅ YE COMPLETE USEEFFECT ADD KARO
-  useEffect(() => {
-    audioRef.current = new Audio(MUSIC_FILE)
-    audioRef.current.loop = true
-    audioRef.current.volume = musicVolume
-
-    return () => {
-      if (audioRef.current) {
-        audioRef.current.pause()
-        audioRef.current = null
-      }
+ // ✅ Audio initialization
+useEffect(() => {
+  audioRef.current = new Audio(MUSIC_FILE)  // ✅ Use the constant you already defined
+  audioRef.current.loop = true
+  audioRef.current.volume = musicVolume
+  
+  return () => {
+    if (audioRef.current) {
+      audioRef.current.pause()
+      audioRef.current = null
     }
-  }, [])
+  }
+}, [])
+
+
 
 useEffect(() => {
     checkAuth()
@@ -330,18 +335,23 @@ useEffect(() => {
   }
 
   // ✅ YE 3 FUNCTIONS ADD KARO
-  const toggleMusic = () => {
-    if (!audioRef.current) return
+const toggleMusic = async () => {
+  if (!audioRef.current) return
 
+  try {
     if (isMusicPlaying) {
       audioRef.current.pause()
       setIsMusicPlaying(false)
     } else {
-      audioRef.current.play()
-        .then(() => setIsMusicPlaying(true))
-        .catch(err => console.log('Audio play failed:', err))
+      await audioRef.current.play()
+      setIsMusicPlaying(true)
     }
+  } catch (error) {
+    console.error('Playback error:', error.message)
+    // Don't show alert, just log
   }
+}
+
 
   const handleVolumeChange = (e) => {
     const newVolume = parseFloat(e.target.value)
