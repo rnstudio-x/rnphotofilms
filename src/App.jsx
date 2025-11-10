@@ -15,6 +15,16 @@ import Blog from './components/Blog'
 import Contact from './components/Contact'
 import Footer from './components/Footer'
 import BlogPostModal from './components/BlogPostModal'
+// Client Components
+import ClientLogin from './client/ClientLogin'
+import ClientDashboard from './client/ClientDashboard'
+import ClientEvents from './client/ClientEvents'
+import ClientPayments from './client/ClientPayments'
+import ClientProfile from './client/ClientProfile'
+import ClientGallery from './client/ClientGallery'
+// Guest Components
+import GuestRegistration from './guest/GuestRegistration'
+import GuestGallery from './guest/GuestGallery'
 
 // CRM Components
 import CRMDashboard from './crm/CRMDashboard'
@@ -71,6 +81,16 @@ function App() {
 
         {/* CRM Routes */}
         <Route path="/crm/*" element={<CRMDashboard />} />
+        {/* ✅ CLIENT PORTAL ROUTES */}
+        <Route path="/client/login" element={<ClientLogin />} />
+        <Route path="/client/dashboard" element={<ClientDashboard />} />
+        <Route path="/client/events" element={<ClientEvents />} />
+        <Route path="/client/payments" element={<ClientPayments />} />
+        <Route path="/client/profile" element={<ClientProfile />} />
+        <Route path="/client/gallery" element={<ClientGallery />} />
+        {/* ✅ GUEST PORTAL ROUTES */}
+        <Route path="/guest/register/:eventId" element={<GuestRegistration />} />
+        <Route path="/guest/gallery/:eventId" element={<GuestGallery />} />
 
         {/* Fallback Route */}
         <Route path="*" element={<Navigate to="/" replace />} />

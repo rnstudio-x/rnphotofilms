@@ -1,9 +1,11 @@
 import React, { useState } from 'react'
-import { FaHeart, FaFacebookF, FaInstagram, FaTwitter, FaYoutube, FaLock } from 'react-icons/fa'
+import { FaHeart, FaFacebookF, FaInstagram, FaTwitter, FaYoutube, FaLock, FaUser } from 'react-icons/fa'
 import { motion } from 'framer-motion'
+import { useNavigate } from 'react-router-dom'
 import AdminLogin from '../crm/Components/AdminLogin'
 
 const Footer = () => {
+  const navigate = useNavigate()
   const [showAdminLogin, setShowAdminLogin] = useState(false)
   const [clickCount, setClickCount] = useState(0)
 
@@ -53,6 +55,21 @@ const Footer = () => {
                 <li><a href="#services" className="text-gray-400 hover:text-gold transition-colors text-sm">Services</a></li>
                 <li><a href="#blog" className="text-gray-400 hover:text-gold transition-colors text-sm">Blog</a></li>
                 <li><a href="#contact" className="text-gray-400 hover:text-gold transition-colors text-sm">Contact</a></li>
+                {/* ✅ CLIENT ACCESS LINK (ADD THIS) */}
+            <button
+                   onClick={() => {
+                   const token = localStorage.getItem('clientToken')
+                   if (token) {
+                   navigate('/client/dashboard')
+                    } else {
+                      navigate('/client/login')
+                    }
+                  }}
+  className="flex items-center gap-2 hover:text-blue-400 transition-colors group"
+>
+  <FaUser className="group-hover:scale-110 transition-transform" />
+  <span>Client Portal</span>
+</button>
               </ul>
             </div>
 

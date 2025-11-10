@@ -22,6 +22,7 @@ import ContractGenerator from './Components/ContractGenerator'
 import InvoiceGenerator from './Components/InvoiceGenerator'
 import ProposalGenerator from './Components/ProposalGenerator'
 import ScheduleCalendar from './Components/ScheduleCalendar'
+import GalleryManager from './Components/GalleryManager'
 import Settings from './Components/Settings'
 
 const CRMDashboard = () => {
@@ -66,6 +67,7 @@ const [activeModule, setActiveModule] = useState('dashboard')
     {id: 'invoices', label: 'Invoices', icon: <FaClipboardCheck />, path: '/crm/invoices' },
     {id: 'proposals', label: 'Proposals', icon: <FaClipboardCheck />, path: '/crm/proposals' },
     {id: 'calendar', label: 'Calendar', icon: <FaCalendarAlt />, path: '/crm/calendar' },
+    {id: 'gallery', label: 'Gallery', icon: <FaUserTie />, path: '/crm/gallery' },
     { id: 'settings', label: 'Settings', icon: <FaCog />, path: '/crm/settings' },
   ]
 
@@ -331,6 +333,7 @@ const [activeModule, setActiveModule] = useState('dashboard')
             <Route path="/invoices" element={<InvoiceGenerator />} />
             <Route path="/proposals" element={<ProposalGenerator />} />
             <Route path="/calendar" element={<ScheduleCalendar />} />
+            <Route path="/gallery" element={<GalleryManager />} />
             <Route path="/settings" element={<Settings />} />
             <Route path="*" element={<Navigate to="/crm" replace />} />
           </Routes>
