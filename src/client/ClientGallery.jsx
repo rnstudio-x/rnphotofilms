@@ -5,7 +5,8 @@ import {
   FaImages, FaDownload, FaExpand, FaTimes, FaCheckCircle, 
   FaArrowLeft, FaSearch, FaCloudDownloadAlt, 
   FaFolder, FaHeart, FaCamera, FaStar, FaTh, FaThLarge,
-  FaChevronLeft, FaChevronRight, FaPlay, FaPause, FaVolumeUp, FaVolumeMute, FaMusic
+  FaChevronLeft, FaChevronRight, FaPlay, FaPause,
+  FaVolumeUp, FaVolumeMute, FaMusic
 } from 'react-icons/fa'
 
 const ClientGallery = () => {
@@ -26,11 +27,9 @@ const ClientGallery = () => {
   const [preloadedImages, setPreloadedImages] = useState({})
   const [imageTransitioning, setImageTransitioning] = useState(false)
   
-  // ✅ YE 3 STATES ADD KARO
   const [isMusicPlaying, setIsMusicPlaying] = useState(false)
   const [musicVolume, setMusicVolume] = useState(0.5)
   const [isMuted, setIsMuted] = useState(false)
-
 
   const hasFetched = useRef(false)
   const slideshowInterval = useRef(null)
@@ -38,18 +37,13 @@ const ClientGallery = () => {
   const audioRef = useRef(null)
 
   const GAS_URL = 'https://script.google.com/macros/s/AKfycby6Ph2hqgkYfoeMu_rIrvPvf0dU-NoG8N8vXACD8O9pWqGvdxFbXZ176XZRhukvaBDUFg/exec'
-
-// ✅ Working URL - Copyright-free music
-const MUSIC_FILE = 'https://cdn.pixabay.com/audio/2025/10/01/audio_04ebd94964.mp3'
-
-  // '/music/romantic-wedding.mp3',
-  // '/music/cinematic-theme.mp3'
+  
+  const MUSIC_FILE = 'https://cdn.pixabay.com/audio/2021/11/23/audio_64b2dd1bce.mp3'
 
   const filteredPhotos = photos.filter(photo =>
     photo.name.toLowerCase().includes(searchQuery.toLowerCase())
   )
 
-  // ✅ Image URLs with quality tiers
   const getImageUrl = (photo, quality = 'hd') => {
     const sizes = {
       thumb: 'w400',
@@ -60,7 +54,6 @@ const MUSIC_FILE = 'https://cdn.pixabay.com/audio/2025/10/01/audio_04ebd94964.mp
     return `https://drive.google.com/thumbnail?id=${photo.id}&sz=${sizes[quality]}`
   }
 
-  // ✅ Preload next 3 images for smooth slideshow
   const preloadImages = (startIndex) => {
     for (let i = 1; i <= 3; i++) {
       const nextIndex = (startIndex + i) % filteredPhotos.length
@@ -73,24 +66,49 @@ const MUSIC_FILE = 'https://cdn.pixabay.com/audio/2025/10/01/audio_04ebd94964.mp
     }
   }
 
-    // ✅ YE COMPLETE USEEFFECT ADD KARO
- // ✅ Audio initialization
-useEffect(() => {
-  audioRef.current = new Audio(MUSIC_FILE)  // ✅ Use the constant you already defined
-  audioRef.current.loop = true
-  audioRef.current.volume = musicVolume
-  
-  return () => {
-    if (audioRef.current) {
+  // Audio initialization
+  useEffect(() => {
+    audioRef.current = new Audio(MUSIC_FILE)
+    audioRef.current.loop = true
+    audioRef.current.volume = musicVolume
+    
+    return () => {
+      if (audioRef.current) {
+        audioRef.current.pause()
+        audioRef.current = null
+      }
+    }
+  }, [])
+
+  const toggleMusic = () => {
+    if (!audioRef.current) return
+
+    if (isMusicPlaying) {
       audioRef.current.pause()
-      audioRef.current = null
+      setIsMusicPlaying(false)
+    } else {
+      audioRef.current.play()
+        .then(() => setIsMusicPlaying(true))
+        .catch(err => console.log('Audio play failed:', err))
     }
   }
-}, [])
 
+  const handleVolumeChange = (e) => {
+    const newVolume = parseFloat(e.target.value)
+    setMusicVolume(newVolume)
+    if (audioRef.current) {
+      audioRef.current.volume = newVolume
+    }
+  }
 
+  const toggleMute = () => {
+    if (audioRef.current) {
+      audioRef.current.muted = !isMuted
+      setIsMuted(!isMuted)
+    }
+  }
 
-useEffect(() => {
+ useEffect(() => {
     checkAuth()
     // ✅ Hide navbar
     const navbar = document.querySelector('nav')
@@ -105,86 +123,91 @@ useEffect(() => {
       }
     }
   }, []) // ✅ EMPTY DEPENDENCY - run once only!
-  
+
   useEffect(() => {
-    if (hasFetched.current) return
-    hasFetched.current = true
-    checkAuth()
-    
-    const navbar = document.querySelector('nav')
-    if (navbar) navbar.style.display = 'none'
+    const handleKeyPress = (e) => {
+      if (!selectedPhoto) return
+      
+      if (e.key === 'ArrowLeft') prevPhoto()
+      if (e.key === 'ArrowRight') nextPhoto()
+      if (e.key === 'Escape') {
+        setSelectedPhoto(null)
+        stopSlideshow()
+      }
+      if (e.key === ' ') {
+        e.preventDefault()
+        toggleSlideshow()
+      }
+      if (e.key === 'm' || e.key === 'M') {
+        toggleMusic()
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyPress)
+    return () => window.removeEventListener('keydown', handleKeyPress)
+  }, [selectedPhoto, currentImageIndex, filteredPhotos, isSlideshow, isMusicPlaying])
+
+  useEffect(() => {
+    if (isSlideshow && selectedPhoto) {
+      preloadImages(currentImageIndex)
+      
+      if (!isMusicPlaying && audioRef.current) {
+        toggleMusic()
+      }
+      
+      slideshowInterval.current = setInterval(() => {
+        nextPhoto()
+      }, slideshowSpeed)
+    } else {
+      if (slideshowInterval.current) {
+        clearInterval(slideshowInterval.current)
+      }
+      if (isMusicPlaying && audioRef.current) {
+        audioRef.current.pause()
+        setIsMusicPlaying(false)
+      }
+    }
     
     return () => {
-      if (navbar) navbar.style.display = ''
-      stopSlideshow()
+      if (slideshowInterval.current) {
+        clearInterval(slideshowInterval.current)
+      }
     }
-    // ✅ Stop music on unmount
-  if (audioRef.current) {
-    audioRef.current.pause()
-  }
-  }, [])
+  }, [isSlideshow, selectedPhoto, slideshowSpeed, currentImageIndex])
 
-  useEffect(() => {
-  const handleKeyPress = (e) => {
-    if (!selectedPhoto) return
-    
-    if (e.key === 'ArrowLeft') prevPhoto()
-    if (e.key === 'ArrowRight') nextPhoto()
-    if (e.key === 'Escape') {
-      setSelectedPhoto(null)
-      stopSlideshow()
-    }
-    if (e.key === ' ') {
-      e.preventDefault()
-      toggleSlideshow()
-    }
-    // ✅ YE ADD KARO
-    if (e.key === 'm' || e.key === 'M') {
-      toggleMusic()
-    }
-  }
-
-  window.addEventListener('keydown', handleKeyPress)
-  return () => window.removeEventListener('keydown', handleKeyPress)
-}, [selectedPhoto, currentImageIndex, filteredPhotos, isSlideshow, isMusicPlaying])
-
-
-  // ✅ Optimized slideshow with preloading
-useEffect(() => {
-  if (isSlideshow && selectedPhoto) {
-    preloadImages(currentImageIndex)
-    
-    // ✅ Auto-play music
-    if (!isMusicPlaying && audioRef.current) {
-      toggleMusic()
-    }
-    
-    slideshowInterval.current = setInterval(() => {
-      nextPhoto()
-    }, slideshowSpeed)
-  } else {
-    if (slideshowInterval.current) {
-      clearInterval(slideshowInterval.current)
-    }
-    // ✅ Pause music when slideshow stops
-    if (isMusicPlaying && audioRef.current) {
-      audioRef.current.pause()
-      setIsMusicPlaying(false)
-    }
-  }
-  
-  return () => {
-    if (slideshowInterval.current) {
-      clearInterval(slideshowInterval.current)
-    }
-  }
-}, [isSlideshow, selectedPhoto, slideshowSpeed, currentImageIndex])
-
-
-  // ✅ Preload when lightbox opens
   useEffect(() => {
     if (selectedPhoto) {
       preloadImages(currentImageIndex)
+    }
+  }, [selectedPhoto, currentImageIndex])
+
+  // Touch swipe support for mobile
+  useEffect(() => {
+    if (!selectedPhoto) return
+    
+    let touchStartX = 0
+    let touchEndX = 0
+    
+    const handleTouchStart = (e) => {
+      touchStartX = e.changedTouches[0].screenX
+    }
+    
+    const handleTouchEnd = (e) => {
+      touchEndX = e.changedTouches[0].screenX
+      handleSwipe()
+    }
+    
+    const handleSwipe = () => {
+      if (touchEndX < touchStartX - 50) nextPhoto()
+      if (touchEndX > touchStartX + 50) prevPhoto()
+    }
+    
+    window.addEventListener('touchstart', handleTouchStart)
+    window.addEventListener('touchend', handleTouchEnd)
+    
+    return () => {
+      window.removeEventListener('touchstart', handleTouchStart)
+      window.removeEventListener('touchend', handleTouchEnd)
     }
   }, [selectedPhoto, currentImageIndex])
 
@@ -290,7 +313,6 @@ useEffect(() => {
     setSelectedPhoto(photo)
   }
 
-  // ✅ Smooth transition between photos
   const changePhoto = (newIndex) => {
     setImageTransitioning(true)
     setTimeout(() => {
@@ -319,6 +341,10 @@ useEffect(() => {
     if (slideshowInterval.current) {
       clearInterval(slideshowInterval.current)
     }
+    if (audioRef.current && isMusicPlaying) {
+      audioRef.current.pause()
+      setIsMusicPlaying(false)
+    }
   }
 
   const startSlideshow = () => {
@@ -334,40 +360,6 @@ useEffect(() => {
     return patterns[index % patterns.length]
   }
 
-  // ✅ YE 3 FUNCTIONS ADD KARO
-const toggleMusic = async () => {
-  if (!audioRef.current) return
-
-  try {
-    if (isMusicPlaying) {
-      audioRef.current.pause()
-      setIsMusicPlaying(false)
-    } else {
-      await audioRef.current.play()
-      setIsMusicPlaying(true)
-    }
-  } catch (error) {
-    console.error('Playback error:', error.message)
-    // Don't show alert, just log
-  }
-}
-
-
-  const handleVolumeChange = (e) => {
-    const newVolume = parseFloat(e.target.value)
-    setMusicVolume(newVolume)
-    if (audioRef.current) {
-      audioRef.current.volume = newVolume
-    }
-  }
-
-  const toggleMute = () => {
-    if (audioRef.current) {
-      audioRef.current.muted = !isMuted
-      setIsMuted(!isMuted)
-    }
-  }
-
   if (loading) {
     return (
       <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center">
@@ -376,7 +368,6 @@ const toggleMusic = async () => {
           animate={{ opacity: 1, scale: 1 }}
           className="text-center"
         >
-          {/* ✅ Elegant minimal loader */}
           <div className="relative w-24 h-24 mx-auto mb-6">
             <motion.div
               animate={{ rotate: 360 }}
@@ -401,7 +392,7 @@ const toggleMusic = async () => {
 
   return (
     <div className="min-h-screen bg-[#0a0a0a] text-white">
-      {/* HEADER */}
+      {/* HEADER - Mobile Optimized */}
       <motion.div
         initial={{ opacity: 0, y: -30 }}
         animate={{ opacity: 1, y: 0 }}
@@ -410,41 +401,41 @@ const toggleMusic = async () => {
       >
         <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZGVmcz48cGF0dGVybiBpZD0iZ3JpZCIgd2lkdGg9IjQwIiBoZWlnaHQ9IjQwIiBwYXR0ZXJuVW5pdHM9InVzZXJTcGFjZU9uVXNlIj48cGF0aCBkPSJNIDQwIDAgTCAwIDAgMCA0MCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSJyZ2JhKDI1NSwgMjU1LCAyNTUsIDAuMDIpIiBzdHJva2Utd2lkdGg9IjEiLz48L3BhdHRlcm4+PC9kZWZzPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIGZpbGw9InVybCgjZ3JpZCkiLz48L3N2Zz4=')] opacity-50"></div>
         
-        <div className="relative px-6 py-12">
+        <div className="relative px-4 sm:px-6 py-8 sm:py-12">
           <div className="max-w-7xl mx-auto">
             <motion.button
               whileHover={{ scale: 1.05, x: -5 }}
               whileTap={{ scale: 0.95 }}
               onClick={() => navigate('/client/dashboard')}
-              className="flex items-center gap-2 text-yellow-500 hover:text-yellow-400 mb-6 transition-colors font-medium"
+              className="flex items-center gap-2 text-yellow-500 hover:text-yellow-400 mb-4 sm:mb-6 transition-colors font-medium text-sm sm:text-base"
             >
               <FaArrowLeft /> Back to Dashboard
             </motion.button>
 
-            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 sm:gap-6">
               <div>
                 <motion.div
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: 0.2 }}
-                  className="flex items-center gap-3 mb-3"
+                  className="flex items-center gap-2 sm:gap-3 mb-2 sm:mb-3"
                 >
-                  <div className="p-3 bg-gradient-to-br from-yellow-500 to-orange-500 rounded-2xl shadow-lg shadow-yellow-500/30">
-                    <FaCamera className="text-2xl text-black" />
+                  <div className="p-2 sm:p-3 bg-gradient-to-br from-yellow-500 to-orange-500 rounded-xl sm:rounded-2xl shadow-lg shadow-yellow-500/30">
+                    <FaCamera className="text-xl sm:text-2xl text-black" />
                   </div>
                   <div>
-                    <p className="text-sm text-gray-400 mb-1">
+                    <p className="text-xs sm:text-sm text-gray-400 mb-1">
                       {eventData?.eventType} • {eventData?.eventDate ? new Date(eventData.eventDate).toLocaleDateString() : ''}
                     </p>
-                    <h1 className="text-4xl md:text-5xl font-bold text-white">
+                    <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-white">
                       {eventData?.name || 'Wedding Gallery'}
                     </h1>
                   </div>
                 </motion.div>
 
-                <p className="text-xl text-gray-300 flex items-center gap-2">
-                  <FaStar className="text-yellow-500" />
-                  {photos.length} beautiful moments captured for you
+                <p className="text-base sm:text-lg md:text-xl text-gray-300 flex items-center gap-2">
+                  <FaStar className="text-yellow-500 text-sm sm:text-base" />
+                  {photos.length} beautiful moments
                 </p>
               </div>
 
@@ -452,11 +443,11 @@ const toggleMusic = async () => {
                 initial={{ opacity: 0, scale: 0.8 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ delay: 0.3 }}
-                className="text-right"
+                className="text-left md:text-right"
               >
-                <div className="inline-block p-4 bg-gradient-to-br from-yellow-500/10 to-orange-500/10 backdrop-blur-sm rounded-2xl border border-yellow-500/30">
-                  <p className="text-sm text-gray-400 mb-1">Powered by</p>
-                  <h2 className="text-3xl font-bold bg-gradient-to-r from-yellow-500 to-orange-500 bg-clip-text text-transparent">
+                <div className="inline-block p-3 sm:p-4 bg-gradient-to-br from-yellow-500/10 to-orange-500/10 backdrop-blur-sm rounded-xl sm:rounded-2xl border border-yellow-500/30">
+                  <p className="text-xs sm:text-sm text-gray-400 mb-1">Powered by</p>
+                  <h2 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-yellow-500 to-orange-500 bg-clip-text text-transparent">
                     RN PhotoFilms
                   </h2>
                   <p className="text-xs text-gray-400 mt-1 italic">Your Emotions, Our Lens</p>
@@ -467,20 +458,20 @@ const toggleMusic = async () => {
         </div>
       </motion.div>
 
-      {/* STATS */}
+      {/* STATS - Mobile Optimized */}
       <motion.div 
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.4 }}
         className="bg-gradient-to-r from-gray-900/50 via-gray-800/50 to-gray-900/50 border-b border-white/10"
       >
-        <div className="max-w-7xl mx-auto px-6 py-4">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 sm:py-4">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-4">
             {[
-              { icon: FaImages, color: 'from-yellow-500 to-orange-500', label: 'Total Photos', value: photos.length },
+              { icon: FaImages, color: 'from-yellow-500 to-orange-500', label: 'Photos', value: photos.length },
               { icon: FaCheckCircle, color: 'from-green-500 to-emerald-500', label: 'Selected', value: selectedPhotos.length },
               { icon: FaHeart, color: 'from-pink-500 to-rose-500', label: 'Favorites', value: favorites.length },
-              { icon: FaFolder, color: 'from-blue-500 to-cyan-500', label: 'Total MB', value: (photos.reduce((sum, p) => sum + p.size, 0) / (1024 * 1024)).toFixed(1) }
+              { icon: FaFolder, color: 'from-blue-500 to-cyan-500', label: 'MB', value: (photos.reduce((sum, p) => sum + p.size, 0) / (1024 * 1024)).toFixed(1) }
             ].map((stat, idx) => (
               <motion.div
                 key={idx}
@@ -488,73 +479,76 @@ const toggleMusic = async () => {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.5 + idx * 0.1 }}
                 whileHover={{ scale: 1.05, y: -2 }}
-                className="text-center p-4 bg-gradient-to-br from-white/5 to-white/10 rounded-2xl border border-white/10 backdrop-blur-sm"
+                className="text-center p-3 sm:p-4 bg-gradient-to-br from-white/5 to-white/10 rounded-xl sm:rounded-2xl border border-white/10 backdrop-blur-sm"
               >
-                <div className={`w-12 h-12 mx-auto mb-3 rounded-xl bg-gradient-to-br ${stat.color} flex items-center justify-center`}>
-                  <stat.icon className="text-2xl text-white" />
+                <div className={`w-10 h-10 sm:w-12 sm:h-12 mx-auto mb-2 sm:mb-3 rounded-lg sm:rounded-xl bg-gradient-to-br ${stat.color} flex items-center justify-center`}>
+                  <stat.icon className="text-lg sm:text-2xl text-white" />
                 </div>
-                <p className="text-3xl font-bold text-white">{stat.value}</p>
-                <p className="text-sm text-gray-400">{stat.label}</p>
+                <p className="text-2xl sm:text-3xl font-bold text-white">{stat.value}</p>
+                <p className="text-xs sm:text-sm text-gray-400">{stat.label}</p>
               </motion.div>
             ))}
           </div>
         </div>
       </motion.div>
 
-      {/* TOOLBAR */}
+      {/* TOOLBAR - Mobile Optimized */}
       <div className="sticky top-0 z-40 bg-[#0a0a0a]/95 backdrop-blur-xl border-b border-white/10 shadow-lg">
-        <div className="max-w-7xl mx-auto px-6 py-4">
-          <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
-            <div className="relative flex-1 max-w-md">
-              <FaSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500" />
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 sm:py-4">
+          <div className="flex flex-col md:flex-row gap-3 sm:gap-4 items-stretch md:items-center justify-between">
+            <div className="relative flex-1 max-w-full md:max-w-md">
+              <FaSearch className="absolute left-3 sm:left-4 top-1/2 -translate-y-1/2 text-gray-500 text-sm sm:text-base" />
               <input
                 type="text"
                 placeholder="Search photos..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-12 pr-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-transparent transition-all"
+                className="w-full pl-9 sm:pl-12 pr-3 sm:pr-4 py-2.5 sm:py-3 bg-white/10 border border-white/20 rounded-lg sm:rounded-xl text-sm sm:text-base text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-transparent transition-all"
               />
             </div>
 
-            <div className="flex gap-3 flex-wrap items-center">
+            <div className="flex gap-2 flex-wrap items-center">
+              {/* Music Button - Icon only on mobile */}
               <motion.button
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
                 onClick={toggleMusic}
-                className={`px-6 py-3 rounded-xl transition-all flex items-center gap-2 font-medium text-sm shadow-lg ${
+                className={`px-3 sm:px-4 md:px-6 py-2.5 sm:py-3 rounded-lg sm:rounded-xl transition-all flex items-center gap-2 font-medium text-xs sm:text-sm shadow-lg ${
                   isMusicPlaying
                     ? 'bg-gradient-to-r from-green-500 to-emerald-500 text-white shadow-green-500/50'
                     : 'bg-gradient-to-r from-gray-600 to-gray-700 text-white shadow-gray-500/50'
                 }`}
               >
                 <FaMusic className={isMusicPlaying ? 'animate-pulse' : ''} /> 
-                {isMusicPlaying ? 'Music On' : 'Music Off'}
+                <span className="hidden sm:inline">{isMusicPlaying ? 'Music On' : 'Music Off'}</span>
               </motion.button>
+
               <motion.button
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
                 onClick={startSlideshow}
-                className="px-6 py-3 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white rounded-xl transition-all flex items-center gap-2 font-medium text-sm shadow-lg shadow-purple-500/50"
+                className="px-3 sm:px-4 md:px-6 py-2.5 sm:py-3 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white rounded-lg sm:rounded-xl transition-all flex items-center gap-2 font-medium text-xs sm:text-sm shadow-lg shadow-purple-500/50"
               >
-                <FaPlay /> Start Slideshow
+                <FaPlay className="text-xs sm:text-base" /> 
+                <span className="hidden sm:inline">Slideshow</span>
               </motion.button>
 
-              <div className="flex bg-white/10 rounded-xl p-1 border border-white/20">
+              <div className="hidden sm:flex bg-white/10 rounded-xl p-1 border border-white/20">
                 <button
                   onClick={() => setViewMode('grid')}
-                  className={`px-4 py-2 rounded-lg transition-all flex items-center gap-2 text-sm font-medium ${
+                  className={`px-3 md:px-4 py-2 rounded-lg transition-all flex items-center gap-2 text-xs sm:text-sm font-medium ${
                     viewMode === 'grid' ? 'bg-yellow-500 text-black' : 'text-gray-400 hover:text-white'
                   }`}
                 >
-                  <FaTh /> Grid
+                  <FaTh /> <span className="hidden md:inline">Grid</span>
                 </button>
                 <button
                   onClick={() => setViewMode('masonry')}
-                  className={`px-4 py-2 rounded-lg transition-all flex items-center gap-2 text-sm font-medium ${
+                  className={`px-3 md:px-4 py-2 rounded-lg transition-all flex items-center gap-2 text-xs sm:text-sm font-medium ${
                     viewMode === 'masonry' ? 'bg-yellow-500 text-black' : 'text-gray-400 hover:text-white'
                   }`}
                 >
-                  <FaThLarge /> Masonry
+                  <FaThLarge /> <span className="hidden md:inline">Masonry</span>
                 </button>
               </div>
 
@@ -562,9 +556,10 @@ const toggleMusic = async () => {
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
                 onClick={selectAll}
-                className="px-6 py-3 bg-white/10 hover:bg-white/20 text-white rounded-xl border border-white/20 transition-all flex items-center gap-2 font-medium text-sm"
+                className="px-3 sm:px-4 md:px-6 py-2.5 sm:py-3 bg-white/10 hover:bg-white/20 text-white rounded-lg sm:rounded-xl border border-white/20 transition-all flex items-center gap-2 font-medium text-xs sm:text-sm"
               >
-                <FaCheckCircle /> {selectedPhotos.length === filteredPhotos.length ? 'Deselect All' : 'Select All'}
+                <FaCheckCircle /> <span className="hidden md:inline">{selectedPhotos.length === filteredPhotos.length ? 'Deselect All' : 'Select All'}</span>
+                <span className="md:hidden">All</span>
               </motion.button>
 
               <motion.button
@@ -572,38 +567,38 @@ const toggleMusic = async () => {
                 whileTap={{ scale: selectedPhotos.length > 0 ? 0.95 : 1 }}
                 onClick={downloadSelected}
                 disabled={selectedPhotos.length === 0}
-                className={`px-6 py-3 rounded-xl flex items-center gap-2 transition-all font-medium text-sm ${
+                className={`px-3 sm:px-4 md:px-6 py-2.5 sm:py-3 rounded-lg sm:rounded-xl flex items-center gap-2 transition-all font-medium text-xs sm:text-sm ${
                   selectedPhotos.length > 0
                     ? 'bg-gradient-to-r from-yellow-500 to-orange-500 text-black hover:shadow-lg hover:shadow-yellow-500/50'
                     : 'bg-gray-700/50 text-gray-500 cursor-not-allowed'
                 }`}
               >
-                <FaCloudDownloadAlt /> Download ({selectedPhotos.length})
+                <FaCloudDownloadAlt /> ({selectedPhotos.length})
               </motion.button>
             </div>
           </div>
         </div>
       </div>
 
-      {/* GALLERY */}
-      <div className="max-w-7xl mx-auto px-6 py-8">
+      {/* GALLERY - Mobile Optimized Grid */}
+      <div className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 py-6 sm:py-8">
         {filteredPhotos.length === 0 ? (
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="text-center py-20">
-            <div className="w-24 h-24 mx-auto mb-6 rounded-full bg-gradient-to-br from-gray-800 to-gray-900 flex items-center justify-center">
-              <FaImages className="text-5xl text-gray-600" />
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="text-center py-12 sm:py-20">
+            <div className="w-16 h-16 sm:w-24 sm:h-24 mx-auto mb-4 sm:mb-6 rounded-full bg-gradient-to-br from-gray-800 to-gray-900 flex items-center justify-center">
+              <FaImages className="text-3xl sm:text-5xl text-gray-600" />
             </div>
-            <h3 className="text-2xl font-bold text-white mb-2">
+            <h3 className="text-xl sm:text-2xl font-bold text-white mb-2">
               {searchQuery ? 'No photos found' : 'Gallery Empty'}
             </h3>
-            <p className="text-gray-400">
+            <p className="text-sm sm:text-base text-gray-400">
               {searchQuery ? 'Try a different search term' : 'Photos will appear here once uploaded'}
             </p>
           </motion.div>
         ) : (
           <div className={
             viewMode === 'masonry'
-              ? 'grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 auto-rows-[200px] gap-4'
-              : 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6'
+              ? 'grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 auto-rows-[200px] gap-2 sm:gap-3 md:gap-4'
+              : 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4 md:gap-6'
           }>
             {filteredPhotos.map((photo, index) => (
               <motion.div
@@ -615,8 +610,7 @@ const toggleMusic = async () => {
                 className={`relative group cursor-pointer ${viewMode === 'masonry' ? getMasonryClass(index) : ''}`}
                 onClick={(e) => openLightbox(photo, e)}
               >
-                <div className="relative w-full h-full overflow-hidden rounded-2xl shadow-2xl bg-gray-900/50 border border-white/10 backdrop-blur-sm">
-                  {/* ✅ Elegant skeleton loader */}
+                <div className="relative w-full h-full overflow-hidden rounded-xl sm:rounded-2xl shadow-2xl bg-gray-900/50 border border-white/10 backdrop-blur-sm">
                   {!imageLoaded[photo.id] && (
                     <div className="absolute inset-0 bg-gradient-to-br from-gray-800/50 via-gray-700/50 to-gray-800/50">
                       <div className="absolute inset-0 animate-pulse bg-gradient-to-r from-transparent via-white/5 to-transparent" 
@@ -624,7 +618,6 @@ const toggleMusic = async () => {
                     </div>
                   )}
 
-                  {/* ✅ Progressive loading: thumb → preview */}
                   <img
                     src={getImageUrl(photo, 'preview')}
                     alt={photo.name}
@@ -638,36 +631,36 @@ const toggleMusic = async () => {
                   />
 
                   <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent opacity-0 group-hover:opacity-100 transition-all duration-300">
-                    <div className="absolute bottom-0 left-0 right-0 p-4">
-                      <p className="text-white font-medium truncate text-sm mb-3">{photo.name}</p>
-                      <div className="flex gap-2">
+                    <div className="absolute bottom-0 left-0 right-0 p-2 sm:p-3 md:p-4">
+                      <p className="text-white font-medium truncate text-xs sm:text-sm mb-2 sm:mb-3">{photo.name}</p>
+                      <div className="grid grid-cols-4 gap-1 sm:gap-2">
                         <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}
                           onClick={(e) => toggleSelection(photo.id, e)}
-                          className={`flex-1 py-2 rounded-lg transition-all font-medium ${
+                          className={`py-1.5 sm:py-2 rounded-md sm:rounded-lg transition-all font-medium ${
                             selectedPhotos.includes(photo.id)
                               ? 'bg-yellow-500 text-black shadow-lg shadow-yellow-500/50'
                               : 'bg-white/20 backdrop-blur-sm text-white hover:bg-white/30'
                           }`}>
-                          <FaCheckCircle className="mx-auto text-lg" />
+                          <FaCheckCircle className="mx-auto text-sm sm:text-lg" />
                         </motion.button>
                         <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}
                           onClick={(e) => toggleFavorite(photo.id, e)}
-                          className={`flex-1 py-2 rounded-lg transition-all ${
+                          className={`py-1.5 sm:py-2 rounded-md sm:rounded-lg transition-all ${
                             favorites.includes(photo.id)
                               ? 'bg-pink-500 text-white shadow-lg shadow-pink-500/50'
                               : 'bg-white/20 backdrop-blur-sm text-white hover:bg-white/30'
                           }`}>
-                          <FaHeart className="mx-auto text-lg" />
+                          <FaHeart className="mx-auto text-sm sm:text-lg" />
                         </motion.button>
                         <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}
                           onClick={(e) => { e.stopPropagation(); downloadPhoto(photo) }}
-                          className="flex-1 py-2 bg-white/20 backdrop-blur-sm hover:bg-white/30 text-white rounded-lg transition-all">
-                          <FaDownload className="mx-auto text-lg" />
+                          className="py-1.5 sm:py-2 bg-white/20 backdrop-blur-sm hover:bg-white/30 text-white rounded-md sm:rounded-lg transition-all">
+                          <FaDownload className="mx-auto text-sm sm:text-lg" />
                         </motion.button>
                         <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}
                           onClick={(e) => openLightbox(photo, e)}
-                          className="flex-1 py-2 bg-white/20 backdrop-blur-sm hover:bg-white/30 text-white rounded-lg transition-all">
-                          <FaExpand className="mx-auto text-lg" />
+                          className="py-1.5 sm:py-2 bg-white/20 backdrop-blur-sm hover:bg-white/30 text-white rounded-md sm:rounded-lg transition-all">
+                          <FaExpand className="mx-auto text-sm sm:text-lg" />
                         </motion.button>
                       </div>
                     </div>
@@ -676,16 +669,16 @@ const toggleMusic = async () => {
                   <AnimatePresence>
                     {selectedPhotos.includes(photo.id) && (
                       <motion.div initial={{ scale: 0, rotate: -180 }} animate={{ scale: 1, rotate: 0 }} exit={{ scale: 0, rotate: 180 }}
-                        className="absolute top-3 right-3 w-10 h-10 bg-yellow-500 rounded-full flex items-center justify-center shadow-lg shadow-yellow-500/50 border-2 border-white z-10">
-                        <FaCheckCircle className="text-black text-xl" />
+                        className="absolute top-2 sm:top-3 right-2 sm:right-3 w-8 h-8 sm:w-10 sm:h-10 bg-yellow-500 rounded-full flex items-center justify-center shadow-lg shadow-yellow-500/50 border-2 border-white z-10">
+                        <FaCheckCircle className="text-black text-base sm:text-xl" />
                       </motion.div>
                     )}
                   </AnimatePresence>
                   <AnimatePresence>
                     {favorites.includes(photo.id) && (
                       <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }}
-                        className="absolute top-3 left-3 w-10 h-10 bg-pink-500 rounded-full flex items-center justify-center shadow-lg shadow-pink-500/50 border-2 border-white z-10">
-                        <FaHeart className="text-white text-lg" />
+                        className="absolute top-2 sm:top-3 left-2 sm:left-3 w-8 h-8 sm:w-10 sm:h-10 bg-pink-500 rounded-full flex items-center justify-center shadow-lg shadow-pink-500/50 border-2 border-white z-10">
+                        <FaHeart className="text-white text-sm sm:text-lg" />
                       </motion.div>
                     )}
                   </AnimatePresence>
@@ -696,7 +689,7 @@ const toggleMusic = async () => {
         )}
       </div>
 
-      {/* ✅ ULTRA-SMOOTH LIGHTBOX */}
+      {/* LIGHTBOX - Mobile Optimized */}
       <AnimatePresence>
         {selectedPhoto && (
           <motion.div 
@@ -708,30 +701,32 @@ const toggleMusic = async () => {
             onClick={() => { setSelectedPhoto(null); stopSlideshow(); }}
           >
             
-            {/* Top Controls */}
+            {/* Top Controls - Mobile Optimized */}
             <motion.div 
               initial={{ y: -100, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
               exit={{ y: -100, opacity: 0 }}
               transition={{ duration: 0.3 }}
-              className="absolute top-0 left-0 right-0 p-6 bg-gradient-to-b from-black/90 to-transparent z-20"
+              className="absolute top-0 left-0 right-0 p-3 sm:p-4 md:p-6 bg-gradient-to-b from-black/90 to-transparent z-20"
             >
-              <div className="max-w-7xl mx-auto flex justify-between items-center">
-                <div className="text-white">
-                  <p className="text-xl font-bold">{selectedPhoto.name}</p>
-                  <p className="text-sm text-gray-300 mt-1">
-                    Photo {currentImageIndex + 1} of {filteredPhotos.length} • {(selectedPhoto.size / (1024 * 1024)).toFixed(2)} MB
+              <div className="max-w-7xl mx-auto flex justify-between items-center gap-2">
+                <div className="text-white flex-1 min-w-0">
+                  <p className="text-sm sm:text-base md:text-xl font-bold truncate">{selectedPhoto.name}</p>
+                  <p className="text-xs sm:text-sm text-gray-300 mt-1">
+                    {currentImageIndex + 1}/{filteredPhotos.length} • {(selectedPhoto.size / (1024 * 1024)).toFixed(2)} MB
                   </p>
                 </div>
 
-                <div className="flex items-center gap-2 px-4 py-2 bg-white/10 rounded-xl border border-white/20">
+                <div className="flex gap-1 sm:gap-2 md:gap-3 flex-shrink-0">
+                  {/* Volume - Hide on small screens */}
+                  <div className="hidden sm:flex items-center gap-2 px-3 md:px-4 py-2 bg-white/10 rounded-lg md:rounded-xl border border-white/20">
                     <motion.button
                       whileHover={{ scale: 1.1 }}
                       whileTap={{ scale: 0.9 }}
                       onClick={(e) => { e.stopPropagation(); toggleMute(); }}
                       className="text-white"
                     >
-                      {isMuted ? <FaVolumeMute className="text-xl" /> : <FaVolumeUp className="text-xl" />}
+                      {isMuted ? <FaVolumeMute className="text-base md:text-xl" /> : <FaVolumeUp className="text-base md:text-xl" />}
                     </motion.button>
                     <input
                       type="range"
@@ -741,16 +736,15 @@ const toggleMusic = async () => {
                       value={musicVolume}
                       onChange={handleVolumeChange}
                       onClick={(e) => e.stopPropagation()}
-                      className="w-20 accent-yellow-500"
+                      className="w-12 md:w-20 accent-yellow-500"
                     />
                   </div>
 
-                <div className="flex gap-3">
                   <select
                     value={slideshowSpeed}
                     onChange={(e) => setSlideshowSpeed(Number(e.target.value))}
                     onClick={(e) => e.stopPropagation()}
-                    className="px-4 py-2 bg-white/10 border border-white/20 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all"
+                    className="px-2 sm:px-3 md:px-4 py-2 bg-white/10 border border-white/20 rounded-lg md:rounded-xl text-white text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all"
                   >
                     <option value="2000" className="bg-gray-900">2s</option>
                     <option value="3000" className="bg-gray-900">3s</option>
@@ -760,44 +754,44 @@ const toggleMusic = async () => {
 
                   <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
                     onClick={(e) => { e.stopPropagation(); toggleSlideshow(); }}
-                    className={`px-6 py-2 rounded-xl flex items-center gap-2 font-medium transition-all ${
+                    className={`px-3 sm:px-4 md:px-6 py-2 rounded-lg md:rounded-xl flex items-center gap-1 sm:gap-2 font-medium text-xs sm:text-sm transition-all ${
                       isSlideshow 
                         ? 'bg-red-500 hover:bg-red-600 text-white shadow-lg shadow-red-500/50' 
                         : 'bg-purple-500 hover:bg-purple-600 text-white shadow-lg shadow-purple-500/50'
                     }`}>
-                    {isSlideshow ? <><FaPause /> Pause</> : <><FaPlay /> Play</>}
+                    {isSlideshow ? <><FaPause /> <span className="hidden sm:inline">Pause</span></> : <><FaPlay /> <span className="hidden sm:inline">Play</span></>}
                   </motion.button>
 
                   <motion.button whileHover={{ scale: 1.1, rotate: 90 }} whileTap={{ scale: 0.9 }}
                     onClick={(e) => { e.stopPropagation(); setSelectedPhoto(null); stopSlideshow(); }}
-                    className="w-12 h-12 bg-red-500/20 hover:bg-red-500 rounded-full flex items-center justify-center text-white transition-all border border-red-500">
-                    <FaTimes className="text-xl" />
+                    className="w-10 h-10 sm:w-12 sm:h-12 bg-red-500/20 hover:bg-red-500 rounded-full flex items-center justify-center text-white transition-all border border-red-500">
+                    <FaTimes className="text-lg sm:text-xl" />
                   </motion.button>
                 </div>
               </div>
             </motion.div>
 
-            {/* Navigation Buttons */}
+            {/* Navigation Buttons - Mobile Optimized */}
             <motion.button 
               whileHover={{ scale: 1.1, x: -5 }} 
               whileTap={{ scale: 0.9 }} 
               onClick={(e) => { e.stopPropagation(); prevPhoto(); }}
-              className="absolute left-6 top-1/2 -translate-y-1/2 z-10 w-16 h-16 bg-black/50 hover:bg-black/70 rounded-full flex items-center justify-center text-white transition-all backdrop-blur-sm border-2 border-white/20"
+              className="absolute left-2 sm:left-4 md:left-6 top-1/2 -translate-y-1/2 z-10 w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 bg-black/50 hover:bg-black/70 rounded-full flex items-center justify-center text-white transition-all backdrop-blur-sm border-2 border-white/20"
             >
-              <FaChevronLeft className="text-3xl" />
+              <FaChevronLeft className="text-xl sm:text-2xl md:text-3xl" />
             </motion.button>
 
             <motion.button 
               whileHover={{ scale: 1.1, x: 5 }} 
               whileTap={{ scale: 0.9 }} 
               onClick={(e) => { e.stopPropagation(); nextPhoto(); }}
-              className="absolute right-6 top-1/2 -translate-y-1/2 z-10 w-16 h-16 bg-black/50 hover:bg-black/70 rounded-full flex items-center justify-center text-white transition-all backdrop-blur-sm border-2 border-white/20"
+              className="absolute right-2 sm:right-4 md:right-6 top-1/2 -translate-y-1/2 z-10 w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 bg-black/50 hover:bg-black/70 rounded-full flex items-center justify-center text-white transition-all backdrop-blur-sm border-2 border-white/20"
             >
-              <FaChevronRight className="text-3xl" />
+              <FaChevronRight className="text-xl sm:text-2xl md:text-3xl" />
             </motion.button>
 
-            {/* ✅ Main Image with Crossfade */}
-            <div className="relative w-full h-full flex items-center justify-center p-20" onClick={(e) => e.stopPropagation()}>
+            {/* Main Image - Mobile Optimized Padding */}
+            <div className="relative w-full h-full flex items-center justify-center p-3 sm:p-6 md:p-12 lg:p-20" onClick={(e) => e.stopPropagation()}>
               <AnimatePresence mode="wait">
                 <motion.img 
                   key={selectedPhoto.id}
@@ -818,34 +812,38 @@ const toggleMusic = async () => {
               </AnimatePresence>
             </div>
 
-            {/* Bottom Action Bar */}
+            {/* Bottom Action Bar - Mobile Optimized */}
             <motion.div 
               initial={{ y: 100, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
               exit={{ y: 100, opacity: 0 }}
               transition={{ duration: 0.3 }}
-              className="absolute bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-black/90 to-transparent z-20"
+              className="absolute bottom-0 left-0 right-0 p-3 sm:p-4 md:p-6 bg-gradient-to-t from-black/90 to-transparent z-20"
             >
-              <div className="max-w-7xl mx-auto flex justify-center gap-4">
+              <div className="max-w-7xl mx-auto flex flex-col sm:flex-row justify-center gap-2 sm:gap-3 md:gap-4">
                 <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
                   onClick={(e) => { e.stopPropagation(); toggleFavorite(selectedPhoto.id, e); }}
-                  className={`px-8 py-3 rounded-xl transition-all font-medium flex items-center gap-2 ${
+                  className={`px-4 sm:px-6 md:px-8 py-2.5 sm:py-3 rounded-lg md:rounded-xl transition-all font-medium flex items-center justify-center gap-2 text-xs sm:text-sm md:text-base ${
                     favorites.includes(selectedPhoto.id)
                       ? 'bg-pink-500 text-white shadow-lg shadow-pink-500/50'
                       : 'bg-white/10 text-white hover:bg-white/20 border border-white/20 backdrop-blur-sm'
                   }`}>
-                  <FaHeart /> {favorites.includes(selectedPhoto.id) ? 'Favorited' : 'Add to Favorites'}
+                  <FaHeart /> <span className="hidden sm:inline">{favorites.includes(selectedPhoto.id) ? 'Favorited' : 'Add to Favorites'}</span>
+                  <span className="sm:hidden">Favorite</span>
                 </motion.button>
 
                 <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
                   onClick={(e) => { e.stopPropagation(); downloadPhoto(selectedPhoto); }}
-                  className="px-8 py-3 bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 text-black rounded-xl transition-all font-medium flex items-center gap-2 shadow-lg shadow-yellow-500/50">
-                  <FaDownload /> Download Full Quality
+                  className="px-4 sm:px-6 md:px-8 py-2.5 sm:py-3 bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 text-black rounded-lg md:rounded-xl transition-all font-medium flex items-center justify-center gap-2 shadow-lg shadow-yellow-500/50 text-xs sm:text-sm md:text-base">
+                  <FaDownload /> <span className="hidden sm:inline">Download Full Quality</span>
+                  <span className="sm:hidden">Download</span>
                 </motion.button>
               </div>
 
-              <p className="text-center text-sm text-gray-300 mt-4">
-                ← → Navigate • SPACE Play/Pause • M Music • ESC Close • Perfect for SmartTV 📺🎵
+              <p className="text-center text-xs sm:text-sm text-gray-300 mt-3 sm:mt-4">
+                <span className="hidden sm:inline">← → Navigate • SPACE Play/Pause • M Music • ESC Close • </span>
+                <span className="sm:hidden">Swipe to navigate • </span>
+                Perfect for SmartTV 📺🎵
               </p>
             </motion.div>
           </motion.div>
@@ -853,24 +851,23 @@ const toggleMusic = async () => {
       </AnimatePresence>
 
       {/* FOOTER */}
-      <div className="bg-gradient-to-t from-gray-900 to-transparent border-t border-white/10 mt-12">
-        <div className="max-w-7xl mx-auto px-6 py-8 text-center">
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-3">
-            <div className="flex items-center justify-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-yellow-500 to-orange-500 flex items-center justify-center">
-                <FaCamera className="text-xl text-black" />
+      <div className="bg-gradient-to-t from-gray-900 to-transparent border-t border-white/10 mt-8 sm:mt-12">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8 text-center">
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-2 sm:space-y-3">
+            <div className="flex items-center justify-center gap-2 sm:gap-3">
+              <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-gradient-to-br from-yellow-500 to-orange-500 flex items-center justify-center">
+                <FaCamera className="text-base sm:text-xl text-black" />
               </div>
-              <h3 className="text-3xl font-bold bg-gradient-to-r from-yellow-500 to-orange-500 bg-clip-text text-transparent">
+              <h3 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-yellow-500 to-orange-500 bg-clip-text text-transparent">
                 RN PhotoFilms
               </h3>
             </div>
-            <p className="text-gray-400 italic">Your Emotions, Our Lens</p>
-            <p className="text-sm text-gray-500">© 2025 RN PhotoFilms • All rights reserved</p>
+            <p className="text-sm sm:text-base text-gray-400 italic">Your Emotions, Our Lens</p>
+            <p className="text-xs sm:text-sm text-gray-500">© 2025 RN PhotoFilms • All rights reserved</p>
           </motion.div>
         </div>
       </div>
 
-      {/* ✅ CSS for shimmer effect */}
       <style>{`
         @keyframes shimmer {
           0% { transform: translateX(-100%); }
