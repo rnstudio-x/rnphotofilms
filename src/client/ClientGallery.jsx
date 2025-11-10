@@ -59,7 +59,22 @@ const ClientGallery = () => {
       }
     }
   }
-
+useEffect(() => {
+    checkAuth()
+    // ✅ Hide navbar
+    const navbar = document.querySelector('nav')
+    if (navbar) {
+      navbar.style.display = 'none'
+    }
+    
+    // ✅ Cleanup on unmount
+    return () => {
+      if (navbar) {
+        navbar.style.display = ''
+      }
+    }
+  }, []) // ✅ EMPTY DEPENDENCY - run once only!
+  
   useEffect(() => {
     if (hasFetched.current) return
     hasFetched.current = true
