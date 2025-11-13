@@ -11,7 +11,7 @@ const PhotoDescriptorProcessor = () => {
   const [loading, setLoading] = useState(false)
   const [processingStatus, setProcessingStatus] = useState(null) // ✅ NEW
 
-  const GAS_URL = 'https://script.google.com/macros/s/AKfycbxJqCNEpxZkQcUSYDdjE3pByarRyQCP0F7GEMuGlr2QHjOVCMVwF8faB8-1QUJJo4LUqg/exec'
+  const GAS_URL = 'https://script.google.com/macros/s/AKfycbz9zCggAIoiuDer8YWLO89mlDFDFUEi4HAyMlDuJjML442wV3vA4I4r_g7yclz6Ix93LA/exec'
 
   useEffect(() => {
     fetchEvents()

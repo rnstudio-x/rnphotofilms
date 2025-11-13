@@ -1,17 +1,17 @@
 import React, { useState, useRef, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
-import { 
-  FaCamera, FaUserPlus, FaCheckCircle, FaSpinner, FaRedo, 
-  FaArrowRight, FaMobile, FaEnvelope, FaUser, FaIdCard, 
-  FaImages, FaStar, FaHeart, FaCalendar, FaMapMarkerAlt 
-} from 'react-icons/fa'
+import { FaCamera, FaUserPlus, FaCheckCircle, FaSpinner, FaRedo, FaArrowRight, FaMobile, FaEnvelope, FaUser, FaIdCard, FaImages, FaStar, FaHeart, FaCalendar, FaMapMarkerAlt, FaSignOutAlt } from 'react-icons/fa'
 import Webcam from 'react-webcam'
 
 const GuestRegistration = () => {
   const { eventId } = useParams()
   const navigate = useNavigate()
   const webcamRef = useRef(null)
+
+  // ✅ NEW: Loading & Session States
+  const [initialLoading, setInitialLoading] = useState(true)
+  const [existingSession, setExistingSession] = useState(null)
 
   // Step management: 0 = event selection, 1 = registration form, 2 = selfie capture, 3 = success
   const [step, setStep] = useState(eventId ? 1 : 0)
@@ -37,60 +37,110 @@ const GuestRegistration = () => {
   const [loading, setLoading] = useState(false)
   const [matchedPhotos, setMatchedPhotos] = useState([])
 
-  const GAS_URL = 'https://script.google.com/macros/s/AKfycbxJqCNEpxZkQcUSYDdjE3pByarRyQCP0F7GEMuGlr2QHjOVCMVwF8faB8-1QUJJo4LUqg/exec'
+  const GAS_URL = 'https://script.google.com/macros/s/AKfycbz9zCggAIoiuDer8YWLO89mlDFDFUEi4HAyMlDuJjML442wV3vA4I4r_g7yclz6Ix93LA/exec'
 
+  // ✅ CHECK EXISTING SESSION ON MOUNT
   useEffect(() => {
+    checkExistingSession()
+    
     // Hide navbar on this page
     const navbar = document.querySelector('nav')
     if (navbar) navbar.style.display = 'none'
-    
-    if (!eventId) {
-      // No eventId in URL, fetch available events
-      fetchPublicEvents()
-    } else {
-      // EventId in URL, fetch event details directly
-      fetchEventDetails(eventId)
-    }
 
     return () => {
       if (navbar) navbar.style.display = ''
     }
-  }, [eventId])
+  }, [])
+
+  // ✅ NEW: Check for existing valid session
+  const checkExistingSession = () => {
+    console.log('🔍 Checking for existing session...')
+    
+    const sessionData = localStorage.getItem('guestSession')
+    
+    if (sessionData) {
+      try {
+        const session = JSON.parse(sessionData)
+        console.log('✅ Found existing session:', session)
+        
+        // Check if session is still valid (24 hours)
+        const sessionTime = new Date(session.timestamp).getTime()
+        const now = new Date().getTime()
+        const hoursSinceRegistration = (now - sessionTime) / (1000 * 60 * 60)
+        
+        if (hoursSinceRegistration < 24) {
+          console.log('✅ Session is valid!')
+          
+          // If URL has eventId, check if matches
+          if (eventId && eventId !== session.eventId) {
+            console.log('⚠️ Different event - showing session banner')
+            setExistingSession(session)
+            
+            // Load this event's data
+            if (!eventId) {
+              fetchPublicEvents()
+            } else {
+              fetchEventDetails(eventId)
+            }
+            
+            setInitialLoading(false)
+            return
+          }
+          
+          // Same event or no event specified - redirect to gallery
+          console.log('🔄 Redirecting to existing session gallery...')
+          navigate(`/guest/gallery/${session.eventId}`)
+          return
+        } else {
+          console.log('⚠️ Session expired (>24 hours)')
+          localStorage.removeItem('guestSession')
+        }
+      } catch (error) {
+        console.error('❌ Error parsing session:', error)
+        localStorage.removeItem('guestSession')
+      }
+    }
+    
+    console.log('ℹ️ No valid session found - show registration')
+    
+    // Load events/event data
+    if (!eventId) {
+      fetchPublicEvents()
+    } else {
+      fetchEventDetails(eventId)
+    }
+    
+    setInitialLoading(false)
+  }
 
   // ✅ Fetch all public events with gallery
   const fetchPublicEvents = async () => {
-  setLoadingEvents(true)
-  try {
-    console.log('🔍 Fetching public events...')
-    
-    const response = await fetch(GAS_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'text/plain' },
-      body: JSON.stringify({ action: 'getPublicEvents' }) // ✅ Use getPublicEvents
-    })
-    
-    const result = await response.json()
-    console.log('📥 Backend response:', result)
-    
-    if (result.success) {
-      console.log('✅ Events found:', result.count)
-      setEvents(result.events || [])
-      
-      if ((result.events || []).length === 0) {
-        console.warn('⚠️ No events with gallery found')
-      }
-    } else {
-      console.error('❌ Failed:', result.message)
-      alert('Failed to load events: ' + result.message)
-    }
-  } catch (error) {
-    console.error('❌ Error:', error)
-    alert('Failed to load events. Check console.')
-  } finally {
-    setLoadingEvents(false)
-  }
-}
+    setLoadingEvents(true)
+    try {
+      console.log('🔍 Fetching public events...')
+      const response = await fetch(GAS_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain' },
+        body: JSON.stringify({ action: 'getPublicEvents' })
+      })
 
+      const result = await response.json()
+      console.log('📥 Backend response:', result)
+
+      if (result.success) {
+        console.log('✅ Events found:', result.count)
+        setEvents(result.events || [])
+      } else {
+        console.error('❌ Failed:', result.message)
+        alert('Failed to load events: ' + result.message)
+      }
+    } catch (error) {
+      console.error('❌ Error:', error)
+      alert('Failed to load events. Check console.')
+    } finally {
+      setLoadingEvents(false)
+    }
+  }
 
   // Fetch event details
   const fetchEventDetails = async (eId) => {
@@ -103,9 +153,8 @@ const GuestRegistration = () => {
           eventId: eId
         })
       })
-      
+
       const result = await response.json()
-      
       if (result.success && result.event) {
         setEventData(result.event)
       }
@@ -143,108 +192,272 @@ const GuestRegistration = () => {
     setShowCamera(true)
   }
 
-  // Handle form submission
-  const handleSubmit = async () => {
-  if (step === 0) {
-    // Event selection
-    if (!selectedEventId) {
-      alert('Please select an event')
-      return
-    }
-    
-    fetchEventDetails(selectedEventId)
-    setStep(1)
-  } else if (step === 1) {
-    // Form validation
-    if (!formData.name.trim() || !formData.phone.trim()) {
-      alert('Please fill in all required fields')
-      return
-    }
-    
-    setStep(2)
-  } else if (step === 2) {
-    // Selfie submission
-    if (!selfieData) {
-      alert('Please capture your selfie')
-      return
-    }
-
-    setLoading(true)
-
-    try {
-      console.log('🚀 Submitting guest registration...')
-      console.log('📝 Data:', {
-        eventId: selectedEventId,
-        name: formData.name,
-        phone: formData.phone,
-        email: formData.email
-      })
-      
-      const response = await fetch(GAS_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'text/plain' },
-        body: JSON.stringify({
-          action: 'matchGuestSelfieSimple',
-          eventId: selectedEventId,
-          name: formData.name.trim(),
-          phone: formData.phone.trim(),
-          email: formData.email.trim(),
-          selfieData: selfieData
-        })
-      })
-
-      const result = await response.json()
-      console.log('✅ Backend response:', result)
-
-      if (result.success) {
-        console.log('✅ Registration successful!')
-        console.log('📊 Matched photos:', result.totalMatches)
-        console.log('🎫 Guest ID:', result.guestId)
-        console.log('🔑 Token:', result.token)
-        
-        setMatchedPhotos(result.matchedPhotos || [])
-        setStep(3) // Move to success screen
-        
-        // ✅ Store guest session for gallery access
-        const guestSession = {
-          eventId: selectedEventId,
-          guestName: formData.name,
-          guestId: result.guestId,
-          token: result.token,
-          matchedCount: (result.matchedPhotos || []).length,
-          timestamp: new Date().toISOString()
-        }
-        
-        localStorage.setItem('guestSession', JSON.stringify(guestSession))
-        console.log('💾 Session saved:', guestSession)
-
-        // ✅ Redirect after 3 seconds
-        console.log('⏳ Redirecting in 3 seconds...')
-        setTimeout(() => {
-          console.log('🔄 Redirecting to gallery...')
-          console.log('🔗 URL:', `/guest/gallery/${selectedEventId}`)
-          navigate(`/guest/gallery/${selectedEventId}`)
-        }, 3000)
-      } else {
-        console.error('❌ Registration failed:', result.message)
-        alert(`❌ Registration failed!\n\n${result.message || 'Please try again'}`)
-        setLoading(false)
-      }
-    } catch (error) {
-      console.error('❌ Registration error:', error)
-      alert('❌ Failed to register!\n\nPlease check your internet connection and try again.')
-      setLoading(false)
+  // ✅ NEW: Clear session and start new registration
+  const handleNewRegistration = () => {
+    if (confirm('Start new registration? This will clear your current session.')) {
+      localStorage.removeItem('guestSession')
+      setExistingSession(null)
+      setStep(eventId ? 1 : 0)
+      setFormData({ name: '', phone: '', email: '' })
+      setSelfieData(null)
     }
   }
-}
+
+  // Handle form submission
+  const handleSubmit = async () => {
+    if (step === 0) {
+      // Event selection
+      if (!selectedEventId) {
+        alert('Please select an event')
+        return
+      }
+
+      fetchEventDetails(selectedEventId)
+      setStep(1)
+    } else if (step === 1) {
+      // Form validation
+      if (!formData.name.trim() || !formData.phone.trim()) {
+        alert('Please fill in all required fields')
+        return
+      }
+
+      setStep(2)
+    } else if (step === 2) {
+      // Selfie submission
+      if (!selfieData) {
+        alert('Please capture your selfie')
+        return
+      }
+
+      setLoading(true)
+
+      try {
+        console.log('🚀 Submitting guest registration...')
+        console.log('📝 Data:', {
+          eventId: selectedEventId,
+          name: formData.name,
+          phone: formData.phone,
+          email: formData.email
+        })
+
+        const response = await fetch(GAS_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain' },
+          body: JSON.stringify({
+            action: 'matchGuestSelfieSimple',
+            eventId: selectedEventId,
+            name: formData.name.trim(),
+            phone: formData.phone.trim(),
+            email: formData.email.trim(),
+            selfieData: selfieData
+          })
+        })
+
+        const result = await response.json()
+        console.log('✅ Backend response:', result)
+
+        if (result.success) {
+          console.log('✅ Registration successful!')
+          console.log('📊 Matched photos:', result.totalMatches)
+          console.log('🎫 Guest ID:', result.guestId)
+          console.log('🔑 Token:', result.token)
+
+          setMatchedPhotos(result.matchedPhotos || [])
+          setStep(3)
+
+          // ✅ Extract matched photo IDs
+          const matchedPhotoIds = (result.matchedPhotos || []).map(p => p.id)
+
+          // ✅ Store guest session for gallery access
+          const guestSession = {
+            eventId: selectedEventId,
+            guestName: formData.name,
+            guestId: result.guestId,
+            token: result.token,
+            matchedCount: matchedPhotoIds.length,
+            matchedPhotoIds: matchedPhotoIds, // ✅ NEW: Store matched IDs
+            timestamp: new Date().toISOString()
+          }
+
+          localStorage.setItem('guestSession', JSON.stringify(guestSession))
+          console.log('💾 Session saved:', guestSession)
+
+          // ✅ Redirect after 3 seconds
+          console.log('⏳ Redirecting in 3 seconds...')
+          setTimeout(() => {
+            console.log('🔄 Redirecting to gallery...')
+            navigate(`/guest/gallery/${selectedEventId}`)
+          }, 3000)
+        } else {
+          console.error('❌ Registration failed:', result.message)
+          alert(`❌ Registration failed!\n\n${result.message || 'Please try again'}`)
+          setLoading(false)
+        }
+      } catch (error) {
+        console.error('❌ Registration error:', error)
+        alert('❌ Failed to register!\n\nPlease check your internet connection and try again.')
+        setLoading(false)
+      }
+    }
+  }
+
+  // ✅ LOADING STATE
+  if (initialLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900">
+        <div className="text-center">
+          <div className="inline-block animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-white mb-4"></div>
+          <p className="text-white text-xl">Checking your session...</p>
+        </div>
+      </div>
+    )
+  }
+
+  // ✅ EXISTING SESSION BANNER
+  const SessionBanner = () => existingSession && (
+    <motion.div
+      initial={{ opacity: 0, y: -20 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="mb-6 p-4 bg-green-500/20 border-2 border-green-500 rounded-xl backdrop-blur-sm"
+    >
+      <div className="flex items-start justify-between mb-3">
+        <div>
+          <p className="text-white font-bold text-lg flex items-center gap-2">
+            <FaCheckCircle className="text-green-400" />
+            Welcome back, {existingSession.guestName}! 👋
+          </p>
+          <p className="text-white/70 text-sm mt-1">
+            You have an active session for <span className="text-green-300 font-semibold">{existingSession.eventId}</span>
+          </p>
+        </div>
+      </div>
+      
+      <div className="flex gap-3 flex-wrap">
+        <button
+          onClick={() => navigate(`/guest/gallery/${existingSession.eventId}`)}
+          className="px-6 py-3 bg-green-500 hover:bg-green-600 text-white rounded-lg font-semibold transition-all shadow-lg flex items-center gap-2"
+        >
+          <FaImages />
+          Continue to Gallery →
+        </button>
+        
+        <button
+          onClick={handleNewRegistration}
+          className="px-6 py-3 bg-white/10 hover:bg-white/20 text-white rounded-lg font-semibold transition-all flex items-center gap-2"
+        >
+          <FaUserPlus />
+          Register for New Event
+        </button>
+      </div>
+    </motion.div>
+  )
+
+  // ==================== REST OF YOUR COMPONENT (STEPS 0, 1, 2, 3) ====================
+  // Keep all your existing step rendering logic below...
+
+  // STEP 0: EVENT SELECTION
+  if (step === 0) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 p-4">
+        <div className="max-w-6xl mx-auto py-12">
+          {/* ✅ Session Banner */}
+          <SessionBanner />
+
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="text-center mb-12"
+          >
+            <div className="inline-flex items-center justify-center w-20 h-20 bg-purple-500 rounded-full mb-6">
+              <FaImages className="text-4xl text-white" />
+            </div>
+            <h1 className="text-5xl font-bold text-white mb-4">
+              Guest Registration
+            </h1>
+            <p className="text-xl text-white/80">
+              Select your event to view and download your photos
+            </p>
+          </motion.div>
+
+          {loadingEvents ? (
+            <div className="text-center py-12">
+              <FaSpinner className="animate-spin text-6xl text-white mx-auto mb-4" />
+              <p className="text-white text-xl">Loading available events...</p>
+            </div>
+          ) : events.length === 0 ? (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="max-w-2xl mx-auto text-center py-12"
+            >
+              <FaImages className="text-6xl text-white/40 mx-auto mb-6" />
+              <p className="text-white/60 text-xl mb-4">
+                There are no photo galleries available at the moment
+              </p>
+              <p className="text-white/40">
+                Please check back later or contact the photographer
+              </p>
+            </motion.div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {events.map((event) => (
+                <motion.div
+                  key={event.id}
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  whileHover={{ scale: 1.05 }}
+                  onClick={() => handleEventSelect(event.id)}
+                  className="bg-white/10 backdrop-blur-md rounded-2xl p-6 cursor-pointer border-2 border-white/20 hover:border-purple-400 transition-all"
+                >
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="w-12 h-12 bg-purple-500 rounded-full flex items-center justify-center">
+                      <FaCamera className="text-white text-xl" />
+                    </div>
+                    <div>
+                      <h3 className="text-white font-bold text-lg">
+                        {event.eventType}
+                      </h3>
+                      <p className="text-white/60 text-sm">
+                        {event.clientName}
+                      </p>
+                    </div>
+                  </div>
+
+                  {event.eventDate && (
+                    <div className="flex items-center gap-2 text-white/80 text-sm mb-2">
+                      <FaCalendar />
+                      <span>{new Date(event.eventDate).toLocaleDateString()}</span>
+                    </div>
+                  )}
+
+                  {event.venue && (
+                    <div className="flex items-center gap-2 text-white/80 text-sm">
+                      <FaMapMarkerAlt />
+                      <span>{event.venue}</span>
+                    </div>
+                  )}
+
+                  <button className="w-full mt-4 px-4 py-3 bg-purple-500 hover:bg-purple-600 text-white rounded-lg font-semibold transition-all flex items-center justify-center gap-2">
+                    View Gallery <FaArrowRight />
+                  </button>
+                </motion.div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    )
+  }
 
 
   // ==================== STEP 0: EVENT SELECTION ====================
+  
   if (step === 0) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-blue-50 py-12 px-4">
-        <div className="max-w-5xl mx-auto">
-          {/* Header */}
+         <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 p-4">
+      <div className="max-w-2xl mx-auto py-12">
+        {/* ✅ Session Banner */}
+        <SessionBanner />
           <motion.div
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -336,8 +549,10 @@ const GuestRegistration = () => {
   // ==================== STEP 1: REGISTRATION FORM ====================
   if (step === 1) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-blue-50 py-12 px-4">
-        <div className="max-w-2xl mx-auto">
+         <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 p-4">
+      <div className="max-w-2xl mx-auto py-12">
+        {/* ✅ Session Banner */}
+        <SessionBanner />
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -454,8 +669,10 @@ const GuestRegistration = () => {
   // ==================== STEP 2: SELFIE CAPTURE ====================
   if (step === 2) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-blue-50 py-12 px-4">
-        <div className="max-w-2xl mx-auto">
+         <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 p-4">
+      <div className="max-w-2xl mx-auto py-12">
+        {/* ✅ Session Banner */}
+        <SessionBanner />
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
