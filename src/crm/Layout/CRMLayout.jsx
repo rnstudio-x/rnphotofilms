@@ -16,6 +16,10 @@ import RemindersManager from '../Components/RemindersManager'
 import ReportsAnalytics from './ReportsAnalytics'
 import ContractGenerator from '../Components/ContractGenerator'
 import GalleryManager from '../Components/GalleryManager'
+import PhotoDescriptorProcessor from '../Components/PhotoDescriptorProcessor'
+import InvoiceGenerator from '../Components/InvoiceGenerator'
+import ProposalGenerator from '../Components/ProposalGenerator'
+import ScheduleCalendar from '../Components/ScheduleCalendar'
 import Settings from './Settings'
 
 const CRMLayout = () => {
@@ -44,6 +48,7 @@ const CRMLayout = () => {
             <Route path="/proposals" element={<ProposalGenerator />} />
             <Route path="/calendar" element={<ScheduleCalendar />} />
             <Route path="/gallery" element={<GalleryManager />} />
+            <Route path="/photo-descriptor" element={<PhotoDescriptorProcessor />} />            
             <Route path="/settings" element={<Settings />} />
           </Routes>
         </main>

@@ -15,6 +15,7 @@ import InvoiceGenerator from './Components/InvoiceGenerator'
 import ProposalGenerator from './Components/ProposalGenerator'
 import ScheduleCalendar from './Components/ScheduleCalendar'
 import GalleryManager from './Components/GalleryManager'
+import PhotoDescriptorProcessor from './Components/PhotoDescriptorProcessor'
 import Settings from './Components/Settings'
 
 const CRMApp = () => {
@@ -34,6 +35,7 @@ const CRMApp = () => {
       <Route path="/crm/proposals" element={<CRMLayout activeModule="proposals"><ProposalGenerator /></CRMLayout>} />
       <Route path="/crm/calendar" element={<CRMLayout activeModule="calendar"><ScheduleCalendar /></CRMLayout>} />
       <Route path="/crm/gallery" element={<CRMLayout activeModule="gallery"><GalleryManager /></CRMLayout>} />
+      <Route path="/crm/photo-descriptor" element={<CRMLayout activeModule="photo-descriptor"><PhotoDescriptorProcessor /></CRMLayout>} />
       <Route path="/crm/settings" element={<CRMLayout activeModule="settings"><Settings /></CRMLayout>} />
     </Routes>
   )
