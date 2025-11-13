@@ -37,7 +37,7 @@ const GuestRegistration = () => {
   const [loading, setLoading] = useState(false)
   const [matchedPhotos, setMatchedPhotos] = useState([])
 
-  const GAS_URL = 'https://script.google.com/macros/s/AKfycbxXXvhEKM251zscij8ghgQM1Q2nBWM10J3PRSy8Cleu1a64i2icdGbnL-vZiKYALOl28A/exec'
+  const GAS_URL = 'https://script.google.com/macros/s/AKfycbxefTv7o5YO3Zg4SEKi-7vpyt1e4fMraCESv_dnk79NIR168I4JZYJ1Krk4EIePy-81Zg/exec'
 
   useEffect(() => {
     // Hide navbar on this page
