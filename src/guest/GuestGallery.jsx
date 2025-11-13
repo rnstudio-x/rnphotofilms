@@ -44,43 +44,78 @@ const GuestGallery = () => {
 
   const GAS_URL = 'https://script.google.com/macros/s/AKfycbxXXvhEKM251zscij8ghgQM1Q2nBWM10J3PRSy8Cleu1a64i2icdGbnL-vZiKYALOl28A/exec'
 
-  // ==================== AUTHENTICATION ====================
+    // ==================== AUTHENTICATION ====================
   useEffect(() => {
     checkAuth()
-
+    
     // Hide main navbar
     const navbar = document.querySelector('nav')
     if (navbar) navbar.style.display = 'none'
-
+    
     return () => {
       if (navbar) navbar.style.display = ''
     }
   }, [])
 
   const checkAuth = () => {
-    const token = localStorage.getItem('guestToken')
-    const data = localStorage.getItem('guestData')
-
-    if (!token || !data) {
+    console.log('🔐 Checking authentication...')
+    console.log('📍 Event ID from URL:', eventId)
+    
+    // ✅ Read session (matches GuestRegistration save format)
+    const sessionData = localStorage.getItem('guestSession')
+    
+    if (!sessionData) {
+      console.error('❌ No guest session found')
+      alert('Please register first')
       navigate(`/guest/register/${eventId}`)
       return
     }
-
+    
     try {
-      const parsedData = JSON.parse(data)
-      setGuestData(parsedData)
-      fetchGallery(parsedData.id, token)
+      const session = JSON.parse(sessionData)
+      console.log('✅ Session loaded:', session)
+      
+      // ✅ Verify event ID matches
+      if (session.eventId !== eventId) {
+        console.error('❌ Event ID mismatch')
+        console.log('Expected:', eventId)
+        console.log('Got:', session.eventId)
+        alert('Invalid event access. Please register for this event.')
+        navigate(`/guest/register/${eventId}`)
+        return
+      }
+      
+      // ✅ Set guest data
+      setGuestData({
+        id: session.guestId,
+        name: session.guestName,
+        eventId: session.eventId,
+        matchedCount: session.matchedCount,
+        timestamp: session.timestamp
+      })
+      
+      console.log('✅ Calling fetchGallery with:', {
+        guestId: session.guestId,
+        token: session.token,
+        eventId: eventId
+      })
+      
+      // ✅ Fetch gallery
+      fetchGallery(session.guestId, session.token)
     } catch (error) {
-      console.error('Auth error:', error)
+      console.error('❌ Auth error:', error)
+      alert('Session error. Please register again.')
+      localStorage.removeItem('guestSession')
       navigate(`/guest/register/${eventId}`)
     }
   }
 
-  // ✅ UPDATED: Fetch gallery with AI face matching
+  // ✅ Fetch gallery (keep existing function)
   const fetchGallery = async (guestId, token) => {
     setLoading(true)
-
     try {
+      console.log('📸 Fetching gallery...')
+      
       const response = await fetch(GAS_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'text/plain' },
@@ -93,17 +128,18 @@ const GuestGallery = () => {
       })
 
       const result = await response.json()
+      console.log('✅ Gallery response:', result)
 
       if (result.success) {
         setEventData(result.event)
         setPhotos(result.photos || [])
+        console.log('✅ Loaded ' + (result.photos || []).length + ' photos')
 
-        // ✅ ADDED: Perform client-side face matching
+        // Face matching logic (keep your existing code)
         if (result.guestDescriptor && result.photoDescriptors && result.photoDescriptors.length > 0) {
           console.log('📸 Starting AI face matching...')
           await performFaceMatching(result.guestDescriptor, result.photoDescriptors)
         } else if (result.aiMatchedPhotos) {
-          // Fallback: Server already did matching
           setAiMatchedPhotos(result.aiMatchedPhotos)
           setShowAiOnly(true)
           console.log('✅ Loaded pre-matched photos from server')
@@ -111,11 +147,12 @@ const GuestGallery = () => {
           console.log('⚠️ No face descriptors available for matching')
         }
       } else {
+        console.error('❌ Gallery fetch failed:', result.message)
         alert(result.message || 'Failed to load gallery')
         navigate(`/guest/register/${eventId}`)
       }
     } catch (error) {
-      console.error('Fetch error:', error)
+      console.error('❌ Fetch error:', error)
       alert('Failed to load gallery. Please try again.')
     } finally {
       setLoading(false)

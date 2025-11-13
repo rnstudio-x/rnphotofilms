@@ -145,78 +145,99 @@ const GuestRegistration = () => {
 
   // Handle form submission
   const handleSubmit = async () => {
-    // Step 1: Validate and proceed to selfie
-    if (step === 1) {
-      if (!formData.name.trim() || !formData.phone.trim()) {
-        alert('Please enter your name and phone number')
-        return
-      }
-      
-      if (formData.phone.length < 10) {
-        alert('Please enter a valid phone number (min 10 digits)')
-        return
-      }
-      
-      setStep(2)
-      setShowCamera(true)
+  if (step === 0) {
+    // Event selection
+    if (!selectedEventId) {
+      alert('Please select an event')
+      return
+    }
+    
+    fetchEventDetails(selectedEventId)
+    setStep(1)
+  } else if (step === 1) {
+    // Form validation
+    if (!formData.name.trim() || !formData.phone.trim()) {
+      alert('Please fill in all required fields')
+      return
+    }
+    
+    setStep(2)
+  } else if (step === 2) {
+    // Selfie submission
+    if (!selfieData) {
+      alert('Please capture your selfie')
       return
     }
 
-    // Step 2: Process selfie and match photos
-    if (step === 2) {
-      if (!selfieData) {
-        alert('Please capture your selfie to continue')
-        return
-      }
+    setLoading(true)
 
-      setLoading(true)
-
-      try {
-        console.log('🚀 Submitting guest registration...')
-        
-        const response = await fetch(GAS_URL, {
-          method: 'POST',
-          headers: { 'Content-Type': 'text/plain' },
-          body: JSON.stringify({
-            action: 'matchGuestSelfieSimple',
-            eventId: selectedEventId,
-            name: formData.name.trim(),
-            phone: formData.phone.trim(),
-            email: formData.email.trim(),
-            selfieData: selfieData
-          })
+    try {
+      console.log('🚀 Submitting guest registration...')
+      console.log('📝 Data:', {
+        eventId: selectedEventId,
+        name: formData.name,
+        phone: formData.phone,
+        email: formData.email
+      })
+      
+      const response = await fetch(GAS_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain' },
+        body: JSON.stringify({
+          action: 'matchGuestSelfieSimple',
+          eventId: selectedEventId,
+          name: formData.name.trim(),
+          phone: formData.phone.trim(),
+          email: formData.email.trim(),
+          selfieData: selfieData
         })
+      })
 
-        const result = await response.json()
-        console.log('✅ Backend response:', result)
+      const result = await response.json()
+      console.log('✅ Backend response:', result)
 
-        if (result.success) {
-          setMatchedPhotos(result.matchedPhotos || [])
-          setStep(3)
-          
-          // Store guest session data
-          localStorage.setItem('guestSession', JSON.stringify({
-            eventId: selectedEventId,
-            guestName: formData.name,
-            matchedCount: (result.matchedPhotos || []).length,
-            timestamp: new Date().toISOString()
-          }))
-
-          // Redirect to gallery after 3 seconds
-          setTimeout(() => {
-            navigate(`/guest/gallery/${selectedEventId}`)
-          }, 3000)
-        } else {
-          alert('❌ Registration failed!\n\n' + (result.message || 'Please try again'))
+      if (result.success) {
+        console.log('✅ Registration successful!')
+        console.log('📊 Matched photos:', result.totalMatches)
+        console.log('🎫 Guest ID:', result.guestId)
+        console.log('🔑 Token:', result.token)
+        
+        setMatchedPhotos(result.matchedPhotos || [])
+        setStep(3) // Move to success screen
+        
+        // ✅ Store guest session for gallery access
+        const guestSession = {
+          eventId: selectedEventId,
+          guestName: formData.name,
+          guestId: result.guestId,
+          token: result.token,
+          matchedCount: (result.matchedPhotos || []).length,
+          timestamp: new Date().toISOString()
         }
-      } catch (error) {
-        console.error('❌ Registration error:', error)
-        alert('❌ Failed to register!\n\nPlease check your internet connection and try again.')
-      } finally {
+        
+        localStorage.setItem('guestSession', JSON.stringify(guestSession))
+        console.log('💾 Session saved:', guestSession)
+
+        // ✅ Redirect after 3 seconds
+        console.log('⏳ Redirecting in 3 seconds...')
+        setTimeout(() => {
+          console.log('🔄 Redirecting to gallery...')
+          console.log('🔗 URL:', `/guest/gallery/${selectedEventId}`)
+          navigate(`/guest/gallery/${selectedEventId}`)
+        }, 3000)
+      } else {
+        console.error('❌ Registration failed:', result.message)
+        alert(`❌ Registration failed!\n\n${result.message || 'Please try again'}`)
         setLoading(false)
       }
+    } catch (error) {
+      console.error('❌ Registration error:', error)
+      alert('❌ Failed to register!\n\nPlease check your internet connection and try again.')
+      setLoading(false)
     }
   }
+}
+
 
   // ==================== STEP 0: EVENT SELECTION ====================
   if (step === 0) {
