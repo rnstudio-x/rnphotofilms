@@ -7,7 +7,6 @@ import {
   FaTh, FaThLarge, FaChevronLeft, FaChevronRight, FaPlay, FaPause, 
   FaVolumeUp, FaVolumeMute, FaMusic, FaUser, FaShare, FaRobot, FaSmile 
 } from 'react-icons/fa'
-import { loadFaceApiModels, findMatchingPhotos } from '../utils/faceApiLoader' // ✅ ADDED
 
 const GuestGallery = () => {
   const { eventId } = useParams()
@@ -43,7 +42,7 @@ const GuestGallery = () => {
   const [isMatchingInProgress, setIsMatchingInProgress] = useState(false)
   const [matchConfidenceScores, setMatchConfidenceScores] = useState({}) // photoId -> confidence score
 
-  const GAS_URL = 'https://script.google.com/macros/s/AKfycbyy0mtYZpuBCcxxx_VVwJ5famgpJPula1ljY82ubZz_ujIkk4XjwXVAf14upVr2hvZxFQ/exec'
+  const GAS_URL = 'https://script.google.com/macros/s/AKfycbxXXvhEKM251zscij8ghgQM1Q2nBWM10J3PRSy8Cleu1a64i2icdGbnL-vZiKYALOl28A/exec'
 
   // ==================== AUTHENTICATION ====================
   useEffect(() => {

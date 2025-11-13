@@ -16,7 +16,7 @@ const Footer = () => {
   const [selectedEvent, setSelectedEvent] = useState('')
   const [loadingEvents, setLoadingEvents] = useState(false)
 
-  const GAS_URL = 'https://script.google.com/macros/s/AKfycbyCFoBNyXT8fmTmlG9RwMO7QVgcuaVpgEUynu-hbG4Hl-zVJf09ArlCbSXNhBX9jDUcpg/exec'
+  const GAS_URL = 'https://script.google.com/macros/s/AKfycbxXXvhEKM251zscij8ghgQM1Q2nBWM10J3PRSy8Cleu1a64i2icdGbnL-vZiKYALOl28A/exec'
 
   // Secret click handler - click 5 times on copyright to reveal admin button
   const handleSecretClick = () => {
@@ -51,33 +51,43 @@ const Footer = () => {
     }
   }
 
-  // ✅ ADDED: Fetch events from both Leads and Events sheets
-  const fetchEvents = async () => {
-    setLoadingEvents(true)
-    try {
-      const response = await fetch(GAS_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'text/plain' },
-        body: JSON.stringify({ action: 'getPublicEvents' }) // Only active/public events
-      })
+  /// ✅ FIXED: Fetch events with correct structure
+const fetchEvents = async () => {
+  setLoadingEvents(true)
+  try {
+    console.log('🔍 Footer: Fetching public events...')
+    
+    const response = await fetch(GAS_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain' },
+      body: JSON.stringify({ action: 'getPublicEvents' })
+    })
+    
+    const result = await response.json()
+    console.log('📥 Footer: Backend response:', result)
+    
+    if (result.success) {
+      // ✅ FIXED: Use result.events directly (not result.leads)
+      const allEvents = result.events || []
       
-      const result = await response.json()
+      console.log('✅ Footer: Events loaded:', allEvents.length)
+      setEvents(allEvents)
       
-      if (result.success) {
-        // Merge and sort by date
-        const allEvents = [...result.leads, ...result.events]
-          .filter(event => event.status !== 'Completed') // Only show upcoming/active events
-          .sort((a, b) => new Date(b.eventDate) - new Date(a.eventDate))
-        
-        setEvents(allEvents)
+      if (allEvents.length === 0) {
+        console.warn('⚠️ Footer: No events found')
       }
-    } catch (error) {
-      console.error('Error fetching events:', error)
-      alert('Failed to load events. Please try again.')
-    } finally {
-      setLoadingEvents(false)
+    } else {
+      console.error('❌ Footer: Failed to fetch events:', result.message)
+      alert('Failed to load events: ' + (result.message || 'Unknown error'))
     }
+  } catch (error) {
+    console.error('❌ Footer: Error fetching events:', error)
+    alert('Failed to load events. Please check console.')
+  } finally {
+    setLoadingEvents(false)
   }
+}
+
 
   // ✅ ADDED: Navigate to guest registration with selected event
   const handleEventSelection = () => {

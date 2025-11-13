@@ -1,131 +1,144 @@
 import * as faceapi from 'face-api.js'
 
 let modelsLoaded = false
+let loadingPromise = null
 
-/**
- * Load face-api.js models (call once at app initialization)
- */
-export const loadFaceApiModels = async () => {
-  if (modelsLoaded) return true
-
-  try {
-    const MODEL_URL = '/models'
-    
-    console.log('🔄 Loading face detection models...')
-    
-    await Promise.all([
-      faceapi.nets.ssdMobilenetv1.loadFromUri(MODEL_URL),
-      faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL),
-      faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL)
-    ])
-
-    modelsLoaded = true
-    console.log('✅ Face-api models loaded successfully!')
+export const loadModels = async () => {
+  if (modelsLoaded) {
+    console.log('✅ Models already loaded')
     return true
-  } catch (error) {
-    console.error('❌ Error loading face-api models:', error)
-    return false
   }
+
+  if (loadingPromise) {
+    return loadingPromise
+  }
+
+  loadingPromise = (async () => {
+    try {
+      console.log('📦 Loading face-api models from CDN...')
+      
+      const MODEL_URL = 'https://cdn.jsdelivr.net/npm/@vladmandic/face-api/model'
+      
+      await Promise.all([
+        faceapi.nets.ssdMobilenetv1.loadFromUri(MODEL_URL),
+        faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL),
+        faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL)
+      ])
+      
+      modelsLoaded = true
+      console.log('✅ Models loaded successfully')
+      return true
+    } catch (error) {
+      console.error('❌ Model loading error:', error)
+      loadingPromise = null
+      throw new Error('Failed to load AI models')
+    }
+  })()
+
+  return loadingPromise
 }
 
-/**
- * Extract 128D face descriptor from base64 image
- * @param {string} base64Image - Base64 encoded image data
- * @returns {Promise<number[]|null>} Face descriptor array or null if no face detected
- */
-export const extractFaceDescriptor = async (base64Image) => {
-  try {
-    if (!modelsLoaded) {
-      await loadFaceApiModels()
-    }
-
-    // Convert base64 to image element
-    const img = await faceapi.bufferToImage(base64Image)
-    
-    // Detect face with landmarks and descriptor
-    const detection = await faceapi
-      .detectSingleFace(img)
-      .withFaceLandmarks()
-      .withFaceDescriptor()
-
-    if (!detection) {
-      console.warn('⚠️ No face detected in image')
-      return null
-    }
-
-    // Return descriptor as array
-    return Array.from(detection.descriptor)
-  } catch (error) {
-    console.error('Error extracting face descriptor:', error)
-    return null
-  }
-}
-
-/**
- * Extract face descriptors from all faces in an image
- * @param {string} imageUrl - Image URL
- * @returns {Promise<Array<{descriptor: number[], box: object}>>}
- */
 export const extractAllFaceDescriptors = async (imageUrl) => {
   try {
     if (!modelsLoaded) {
-      await loadFaceApiModels()
+      await loadModels()
     }
 
-    const img = await faceapi.fetchImage(imageUrl)
+    console.log('🔍 Processing image:', imageUrl)
+
+    // ✅ FIX: Convert to blob URL to bypass CORS
+    let processUrl = imageUrl
     
+    if (imageUrl.includes('drive.google.com')) {
+      let fileId = null
+      
+      // Extract file ID
+      if (imageUrl.includes('id=')) {
+        fileId = imageUrl.split('id=')[1].split('&')[0]
+      } else if (imageUrl.includes('/file/d/')) {
+        fileId = imageUrl.split('/d/')[1].split('/')[0]
+      }
+      
+      if (fileId) {
+        // ✅ Download as blob and create object URL
+        try {
+          const downloadUrl = `https://drive.google.com/uc?export=download&id=${fileId}`
+          console.log('⬇️ Downloading image as blob...')
+          
+          const response = await fetch(downloadUrl, {
+            method: 'GET',
+            mode: 'no-cors' // Bypass CORS
+          })
+          
+          // Create blob from response
+          const blob = await response.blob()
+          processUrl = URL.createObjectURL(blob)
+          console.log('✅ Created blob URL')
+        } catch (fetchError) {
+          console.error('❌ Blob creation failed:', fetchError)
+          // Fallback to original URL
+          throw new Error('Failed to download image: ' + fetchError.message)
+        }
+      }
+    }
+
+    // Load image
+    const img = await faceapi.fetchImage(processUrl)
+    console.log('✅ Image loaded successfully')
+    
+    // Clean up blob URL
+    if (processUrl.startsWith('blob:')) {
+      URL.revokeObjectURL(processUrl)
+    }
+    
+    // Detect faces
     const detections = await faceapi
-      .detectAllFaces(img)
+      .detectAllFaces(img, new faceapi.SsdMobilenetv1Options({ 
+        minConfidence: 0.4
+      }))
       .withFaceLandmarks()
       .withFaceDescriptors()
 
-    return detections.map((det, index) => ({
-      descriptor: Array.from(det.descriptor),
-      box: det.detection.box,
-      faceIndex: index
+    if (!detections || detections.length === 0) {
+      console.log('⚠️ No faces detected')
+      return []
+    }
+
+    console.log(`✅ Found ${detections.length} face(s)`)
+
+    return detections.map((detection, index) => ({
+      descriptor: Array.from(detection.descriptor),
+      box: {
+        x: Math.round(detection.detection.box.x),
+        y: Math.round(detection.detection.box.y),
+        width: Math.round(detection.detection.box.width),
+        height: Math.round(detection.detection.box.height)
+      },
+      landmarks: detection.landmarks,
+      index: index
     }))
   } catch (error) {
-    console.error('Error extracting face descriptors:', error)
-    return []
+    console.error('❌ Face extraction error:', error)
+    throw error
   }
 }
 
-/**
- * Compare two face descriptors and return similarity score
- * @param {number[]} descriptor1 - First face descriptor
- * @param {number[]} descriptor2 - Second face descriptor
- * @returns {number} Distance (lower = more similar, < 0.6 is a match)
- */
-export const compareFaceDescriptors = (descriptor1, descriptor2) => {
-  return faceapi.euclideanDistance(descriptor1, descriptor2)
-}
-
-/**
- * Find matching photos for a guest's face descriptor
- * @param {number[]} guestDescriptor - Guest's face descriptor
- * @param {Array} photoDescriptors - Array of {photoId, descriptor} objects
- * @param {number} threshold - Match threshold (default 0.6)
- * @returns {string[]} Array of matched photo IDs
- */
-export const findMatchingPhotos = (guestDescriptor, photoDescriptors, threshold = 0.6) => {
-  const matchedPhotoIds = []
-
-  for (const photoDesc of photoDescriptors) {
-    const distance = compareFaceDescriptors(guestDescriptor, photoDesc.descriptor)
-    
-    if (distance < threshold) {
-      matchedPhotoIds.push(photoDesc.photoId)
-      console.log(`✅ Match found! Photo ID: ${photoDesc.photoId}, Distance: ${distance.toFixed(3)}`)
+export const compareFaces = (descriptor1, descriptor2, threshold = 0.6) => {
+  try {
+    const distance = faceapi.euclideanDistance(descriptor1, descriptor2)
+    return {
+      isSamePerson: distance < threshold,
+      distance: distance.toFixed(3),
+      similarity: Math.round((1 - distance) * 100)
     }
+  } catch (error) {
+    console.error('❌ Comparison error:', error)
+    return { isSamePerson: false, distance: 1, similarity: 0 }
   }
-
-  return matchedPhotoIds
 }
 
 export default {
-  loadFaceApiModels,
-  extractFaceDescriptor,
+  loadModels,
   extractAllFaceDescriptors,
-  compareFaceDescriptors,
-  findMatchingPhotos
+  compareFaces
 }
