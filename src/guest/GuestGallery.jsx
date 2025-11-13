@@ -42,7 +42,7 @@ const GuestGallery = () => {
   const [isMatchingInProgress, setIsMatchingInProgress] = useState(false)
   const [matchConfidenceScores, setMatchConfidenceScores] = useState({}) // photoId -> confidence score
 
-  const GAS_URL = 'https://script.google.com/macros/s/AKfycbxefTv7o5YO3Zg4SEKi-7vpyt1e4fMraCESv_dnk79NIR168I4JZYJ1Krk4EIePy-81Zg/exec'
+  const GAS_URL = 'https://script.google.com/macros/s/AKfycbxJqCNEpxZkQcUSYDdjE3pByarRyQCP0F7GEMuGlr2QHjOVCMVwF8faB8-1QUJJo4LUqg/exec'
 
     // ==================== AUTHENTICATION ====================
   useEffect(() => {
@@ -112,52 +112,59 @@ const GuestGallery = () => {
 
   // ✅ Fetch gallery (keep existing function)
   const fetchGallery = async (guestId, token) => {
-    setLoading(true)
-    try {
-      console.log('📸 Fetching gallery...')
-      
-      const response = await fetch(GAS_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'text/plain' },
-        body: JSON.stringify({
-          action: 'getGuestGallery',
-          guestId: guestId,
-          eventId: eventId,
-          token: token
-        })
-      })
-
-      const result = await response.json()
-      console.log('✅ Gallery response:', result)
-
-      if (result.success) {
-        setEventData(result.event)
-        setPhotos(result.photos || [])
-        console.log('✅ Loaded ' + (result.photos || []).length + ' photos')
-
-        // Face matching logic (keep your existing code)
-        if (result.guestDescriptor && result.photoDescriptors && result.photoDescriptors.length > 0) {
-          console.log('📸 Starting AI face matching...')
-          await performFaceMatching(result.guestDescriptor, result.photoDescriptors)
-        } else if (result.aiMatchedPhotos) {
-          setAiMatchedPhotos(result.aiMatchedPhotos)
-          setShowAiOnly(true)
-          console.log('✅ Loaded pre-matched photos from server')
-        } else {
-          console.log('⚠️ No face descriptors available for matching')
-        }
-      } else {
-        console.error('❌ Gallery fetch failed:', result.message)
-        alert(result.message || 'Failed to load gallery')
-        navigate(`/guest/register/${eventId}`)
-      }
-    } catch (error) {
-      console.error('❌ Fetch error:', error)
-      alert('Failed to load gallery. Please try again.')
-    } finally {
-      setLoading(false)
+  setLoading(true)
+  try {
+    console.log('📸 Fetching gallery...')
+    console.log('🔑 Guest ID:', guestId)
+    console.log('🎫 Token:', token)
+    console.log('📍 Event ID:', eventId)
+    
+    const requestBody = {
+      action: 'getGuestGallery',
+      guestId: guestId,
+      eventId: eventId,
+      token: token
     }
+    
+    console.log('📤 Request:', requestBody)
+    
+    const response = await fetch(GAS_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain' },
+      body: JSON.stringify(requestBody)
+    })
+
+    console.log('📥 Response status:', response.status)
+    console.log('📥 Response headers:', response.headers.get('content-type'))
+    
+    // ✅ Check if response is JSON
+    const contentType = response.headers.get('content-type')
+    if (!contentType || !contentType.includes('application/json')) {
+      const text = await response.text()
+      console.error('❌ Non-JSON response:', text)
+      throw new Error('Server returned non-JSON response. Please check GAS logs.')
+    }
+    
+    const result = await response.json()
+    console.log('✅ Gallery response:', result)
+
+    if (result.success) {
+      setEventData(result.event)
+      setPhotos(result.photos || [])
+      console.log('✅ Loaded ' + (result.photos || []).length + ' photos')
+    } else {
+      console.error('❌ Gallery fetch failed:', result.message)
+      alert('Failed to load gallery:\n\n' + result.message)
+      navigate(`/guest/register/${eventId}`)
+    }
+  } catch (error) {
+    console.error('❌ Fetch error:', error)
+    alert('Failed to load gallery:\n\n' + error.message + '\n\nPlease check:\n1. Internet connection\n2. GAS deployment\n3. GAS execution logs')
+  } finally {
+    setLoading(false)
   }
+}
+
 
   // ✅ ADDED: Perform face matching on client side
   const performFaceMatching = async (guestDescriptor, photoDescriptors) => {
