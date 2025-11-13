@@ -26,18 +26,67 @@ const GuestGallery = () => {
   const [viewMode, setViewMode] = useState('masonry')
   const [showAiOnly, setShowAiOnly] = useState(false)
   const [aiMatchedPhotos, setAiMatchedPhotos] = useState([])
+  
+  // ✅ NEW: Image loading & transitions (like ClientGallery)
+  const [currentImageIndex, setCurrentImageIndex] = useState(0)
+  const [imageLoaded, setImageLoaded] = useState({})
+  const [imageTransitioning, setImageTransitioning] = useState(false)
 
   // Slideshow States
   const [isSlideshow, setIsSlideshow] = useState(false)
-  const [slideshowIndex, setSlideshowIndex] = useState(0)
   const [slideshowSpeed, setSlideshowSpeed] = useState(3000)
   const [isMusicPlaying, setIsMusicPlaying] = useState(false)
-  const slideshowIntervalRef = useRef(null)
+  const [musicVolume, setMusicVolume] = useState(0.5)
+  const [isMuted, setIsMuted] = useState(false)
+  
+  // ✅ NEW: Refs for image caching & audio
+  const slideshowInterval = useRef(null)
+  const imageCache = useRef({})
   const audioRef = useRef(null)
 
   const GAS_URL = 'https://script.google.com/macros/s/AKfycbz9zCggAIoiuDer8YWLO89mlDFDFUEi4HAyMlDuJjML442wV3vA4I4r_g7yclz6Ix93LA/exec'
+  const MUSIC_FILE = 'https://cdn.pixabay.com/audio/2021/11/23/audio_64b2dd1bce.mp3'
 
-  // ==================== AUTHENTICATION & INITIALIZATION ====================
+  // ✅ NEW: Get optimized image URLs (like ClientGallery)
+  const getImageUrl = (photo, quality = 'hd') => {
+    const sizes = {
+      thumb: 'w400',
+      preview: 'w800',
+      hd: 'w1600',
+      full: 'w2048'
+    }
+    return `https://drive.google.com/thumbnail?id=${photo.id}&sz=${sizes[quality]}`
+  }
+
+  // ✅ NEW: Preload next images for smooth slideshow
+  const preloadImages = (startIndex) => {
+    const displayedPhotos = getDisplayedPhotos()
+    for (let i = 1; i <= 3; i++) {
+      const nextIndex = (startIndex + i) % displayedPhotos.length
+      const photo = displayedPhotos[nextIndex]
+      if (photo && !imageCache.current[photo.id]) {
+        const img = new Image()
+        img.src = getImageUrl(photo, 'hd')
+        imageCache.current[photo.id] = img
+      }
+    }
+  }
+
+  // ✅ Audio initialization
+  useEffect(() => {
+    audioRef.current = new Audio(MUSIC_FILE)
+    audioRef.current.loop = true
+    audioRef.current.volume = musicVolume
+    
+    return () => {
+      if (audioRef.current) {
+        audioRef.current.pause()
+        audioRef.current = null
+      }
+    }
+  }, [])
+
+  // ✅ Authentication & initialization
   useEffect(() => {
     checkAuthAndLoadGallery()
     
@@ -46,13 +95,104 @@ const GuestGallery = () => {
     
     return () => {
       if (navbar) navbar.style.display = ''
-      if (slideshowIntervalRef.current) clearInterval(slideshowIntervalRef.current)
+      if (slideshowInterval.current) clearInterval(slideshowInterval.current)
     }
   }, [eventId])
 
+  // ✅ Keyboard shortcuts (like ClientGallery)
+  useEffect(() => {
+    const handleKeyPress = (e) => {
+      if (!selectedPhoto) return
+      
+      if (e.key === 'ArrowLeft') prevPhoto()
+      if (e.key === 'ArrowRight') nextPhoto()
+      if (e.key === 'Escape') {
+        setSelectedPhoto(null)
+        stopSlideshow()
+      }
+      if (e.key === ' ') {
+        e.preventDefault()
+        toggleSlideshow()
+      }
+      if (e.key === 'm' || e.key === 'M') {
+        toggleMusic()
+      }
+    }
+    
+    window.addEventListener('keydown', handleKeyPress)
+    return () => window.removeEventListener('keydown', handleKeyPress)
+  }, [selectedPhoto, currentImageIndex, isSlideshow, isMusicPlaying])
+
+  // ✅ Slideshow management with auto music
+  useEffect(() => {
+    if (isSlideshow && selectedPhoto) {
+      preloadImages(currentImageIndex)
+      
+      // Auto-start music in slideshow
+      if (!isMusicPlaying && audioRef.current) {
+        toggleMusic()
+      }
+      
+      slideshowInterval.current = setInterval(() => {
+        nextPhoto()
+      }, slideshowSpeed)
+    } else {
+      if (slideshowInterval.current) {
+        clearInterval(slideshowInterval.current)
+      }
+      // Auto-stop music when slideshow stops
+      if (isMusicPlaying && audioRef.current && !isSlideshow) {
+        audioRef.current.pause()
+        setIsMusicPlaying(false)
+      }
+    }
+    
+    return () => {
+      if (slideshowInterval.current) {
+        clearInterval(slideshowInterval.current)
+      }
+    }
+  }, [isSlideshow, selectedPhoto, slideshowSpeed, currentImageIndex])
+
+  // ✅ Preload images when photo changes
+  useEffect(() => {
+    if (selectedPhoto) {
+      preloadImages(currentImageIndex)
+    }
+  }, [selectedPhoto, currentImageIndex])
+
+  // ✅ Touch swipe support (like ClientGallery)
+  useEffect(() => {
+    if (!selectedPhoto) return
+    
+    let touchStartX = 0
+    let touchEndX = 0
+    
+    const handleTouchStart = (e) => {
+      touchStartX = e.changedTouches[0].screenX
+    }
+    
+    const handleTouchEnd = (e) => {
+      touchEndX = e.changedTouches[0].screenX
+      handleSwipe()
+    }
+    
+    const handleSwipe = () => {
+      if (touchEndX < touchStartX - 50) nextPhoto()
+      if (touchEndX > touchStartX + 50) prevPhoto()
+    }
+    
+    window.addEventListener('touchstart', handleTouchStart)
+    window.addEventListener('touchend', handleTouchEnd)
+    
+    return () => {
+      window.removeEventListener('touchstart', handleTouchStart)
+      window.removeEventListener('touchend', handleTouchEnd)
+    }
+  }, [selectedPhoto, currentImageIndex])
+
   const checkAuthAndLoadGallery = async () => {
     console.log('🔐 Checking authentication...')
-    console.log('📍 Event ID from URL:', eventId)
     
     const sessionData = localStorage.getItem('guestSession')
     
@@ -67,13 +207,13 @@ const GuestGallery = () => {
       const session = JSON.parse(sessionData)
       console.log('✅ Session loaded:', session)
       
-      // Check session expiry (24 hours)
+      // Check session expiry
       const sessionTime = new Date(session.timestamp).getTime()
       const now = new Date().getTime()
       const hoursSinceRegistration = (now - sessionTime) / (1000 * 60 * 60)
       
       if (hoursSinceRegistration >= 24) {
-        console.error('❌ Session expired (>24 hours)')
+        console.error('❌ Session expired')
         alert('Your session has expired. Please register again.')
         localStorage.removeItem('guestSession')
         navigate(`/guest/register/${eventId}`)
@@ -83,12 +223,11 @@ const GuestGallery = () => {
       // Verify event ID
       if (session.eventId !== eventId) {
         console.error('❌ Event ID mismatch')
-        alert('Invalid event access. Please register for this event.')
+        alert('Invalid event access.')
         navigate(`/guest/register/${eventId}`)
         return
       }
       
-      // Set guest data
       setGuestData({
         id: session.guestId,
         name: session.guestName,
@@ -98,7 +237,6 @@ const GuestGallery = () => {
         timestamp: session.timestamp
       })
       
-      console.log('✅ Calling fetchGallery...')
       await fetchGallery(session.guestId, session.token, session.matchedPhotoIds || [])
       
     } catch (error) {
@@ -113,7 +251,6 @@ const GuestGallery = () => {
     setLoading(true)
     try {
       console.log('📸 Fetching gallery...')
-      console.log('📊 Matched Photo IDs:', matchedPhotoIds)
       
       const response = await fetch(GAS_URL, {
         method: 'POST',
@@ -124,21 +261,13 @@ const GuestGallery = () => {
         })
       })
 
-      const contentType = response.headers.get('content-type')
-      if (!contentType || !contentType.includes('application/json')) {
-        const text = await response.text()
-        console.error('❌ Non-JSON response:', text)
-        throw new Error('Server returned non-JSON response.')
-      }
-      
       const result = await response.json()
       console.log('✅ Gallery response:', result)
 
       if (result.success) {
         const allPhotos = result.photos || []
-        console.log('📸 Total photos loaded:', allPhotos.length)
+        console.log('📸 Total photos:', allPhotos.length)
         
-        // Separate matched and unmatched
         const matched = []
         const unmatched = []
         
@@ -150,24 +279,23 @@ const GuestGallery = () => {
           }
         })
         
-        console.log('✅ Matched photos:', matched.length)
-        console.log('✅ Other photos:', unmatched.length)
+        console.log('✅ Matched:', matched.length)
         
         setPhotos([...matched, ...unmatched])
         setAiMatchedPhotos(matched)
         
+        // ✅ Default to AI matched if available
         if (matched.length > 0) {
           setShowAiOnly(true)
         }
         
       } else {
-        console.error('❌ Gallery fetch failed:', result.message)
-        alert('Failed to load gallery:\n\n' + result.message)
+        alert('Failed to load gallery')
         navigate(`/guest/register/${eventId}`)
       }
     } catch (error) {
       console.error('❌ Fetch error:', error)
-      alert('Failed to load gallery:\n\n' + error.message)
+      alert('Failed to load gallery')
     } finally {
       setLoading(false)
     }
@@ -175,13 +303,11 @@ const GuestGallery = () => {
 
   const handleLogout = () => {
     if (confirm('Are you sure you want to logout?')) {
-      console.log('🚪 Logging out...')
       localStorage.removeItem('guestSession')
       navigate(`/guest/register/${eventId}`)
     }
   }
 
-  // ==================== PHOTO SELECTION ====================
   const togglePhotoSelection = (photoId) => {
     setSelectedPhotos(prev =>
       prev.includes(photoId)
@@ -191,8 +317,8 @@ const GuestGallery = () => {
   }
 
   const selectAllPhotos = () => {
-    const displayedPhotos = getDisplayedPhotos()
-    setSelectedPhotos(displayedPhotos.map(p => p.id))
+    const displayed = getDisplayedPhotos()
+    setSelectedPhotos(displayed.map(p => p.id))
   }
 
   const deselectAllPhotos = () => {
@@ -201,7 +327,7 @@ const GuestGallery = () => {
 
   const downloadSelectedPhotos = () => {
     if (selectedPhotos.length === 0) {
-      alert('Please select photos to download')
+      alert('Please select photos')
       return
     }
 
@@ -209,13 +335,7 @@ const GuestGallery = () => {
       const photo = photos.find(p => p.id === photoId)
       if (photo) {
         setTimeout(() => {
-          const link = document.createElement('a')
-          link.href = photo.url
-          link.download = photo.name || `photo_${index + 1}.jpg`
-          link.target = '_blank'
-          document.body.appendChild(link)
-          link.click()
-          document.body.removeChild(link)
+          window.open(getImageUrl(photo, 'full'), '_blank')
         }, index * 500)
       }
     })
@@ -223,7 +343,6 @@ const GuestGallery = () => {
     alert(`Downloading ${selectedPhotos.length} photos...`)
   }
 
-  // ==================== FILTERING ====================
   const getDisplayedPhotos = () => {
     let filtered = photos
 
@@ -240,95 +359,145 @@ const GuestGallery = () => {
     return filtered
   }
 
-  // ==================== SLIDESHOW ====================
-  const startSlideshow = () => {
-    setIsSlideshow(true)
-    setSlideshowIndex(0)
-    
-    slideshowIntervalRef.current = setInterval(() => {
-      setSlideshowIndex(prev => {
-        const displayedPhotos = getDisplayedPhotos()
-        return (prev + 1) % displayedPhotos.length
-      })
-    }, slideshowSpeed)
+  // ✅ NEW: Smooth photo change with transition
+  const changePhoto = (newIndex) => {
+    setImageTransitioning(true)
+    setTimeout(() => {
+      setCurrentImageIndex(newIndex)
+      const displayedPhotos = getDisplayedPhotos()
+      setSelectedPhoto(displayedPhotos[newIndex])
+      setImageTransitioning(false)
+    }, 150)
+  }
+
+  const nextPhoto = () => {
+    const displayedPhotos = getDisplayedPhotos()
+    const nextIndex = (currentImageIndex + 1) % displayedPhotos.length
+    changePhoto(nextIndex)
+  }
+
+  const prevPhoto = () => {
+    const displayedPhotos = getDisplayedPhotos()
+    const prevIndex = (currentImageIndex - 1 + displayedPhotos.length) % displayedPhotos.length
+    changePhoto(prevIndex)
+  }
+
+  const openLightbox = (photo, e) => {
+    if (e) e.stopPropagation()
+    const displayedPhotos = getDisplayedPhotos()
+    const index = displayedPhotos.findIndex(p => p.id === photo.id)
+    setCurrentImageIndex(index)
+    setSelectedPhoto(photo)
+  }
+
+  const toggleSlideshow = () => {
+    setIsSlideshow(prev => !prev)
   }
 
   const stopSlideshow = () => {
     setIsSlideshow(false)
-    if (slideshowIntervalRef.current) {
-      clearInterval(slideshowIntervalRef.current)
+    if (slideshowInterval.current) {
+      clearInterval(slideshowInterval.current)
+    }
+    if (audioRef.current && isMusicPlaying) {
+      audioRef.current.pause()
+      setIsMusicPlaying(false)
     }
   }
 
-  const toggleSlideshowPlayPause = () => {
-    if (slideshowIntervalRef.current) {
-      clearInterval(slideshowIntervalRef.current)
-      slideshowIntervalRef.current = null
-    } else {
-      slideshowIntervalRef.current = setInterval(() => {
-        setSlideshowIndex(prev => {
-          const displayedPhotos = getDisplayedPhotos()
-          return (prev + 1) % displayedPhotos.length
-        })
-      }, slideshowSpeed)
+  const startSlideshow = () => {
+    const displayedPhotos = getDisplayedPhotos()
+    if (!selectedPhoto && displayedPhotos.length > 0) {
+      setCurrentImageIndex(0)
+      setSelectedPhoto(displayedPhotos[0])
     }
-  }
-
-  const nextSlide = () => {
-    setSlideshowIndex(prev => {
-      const displayedPhotos = getDisplayedPhotos()
-      return (prev + 1) % displayedPhotos.length
-    })
-  }
-
-  const prevSlide = () => {
-    setSlideshowIndex(prev => {
-      const displayedPhotos = getDisplayedPhotos()
-      return (prev - 1 + displayedPhotos.length) % displayedPhotos.length
-    })
+    setIsSlideshow(true)
   }
 
   const toggleMusic = () => {
-    if (audioRef.current) {
-      if (isMusicPlaying) {
-        audioRef.current.pause()
-      } else {
-        audioRef.current.play()
-      }
-      setIsMusicPlaying(!isMusicPlaying)
+    if (!audioRef.current) return
+    
+    if (isMusicPlaying) {
+      audioRef.current.pause()
+      setIsMusicPlaying(false)
+    } else {
+      audioRef.current.play()
+        .then(() => setIsMusicPlaying(true))
+        .catch(err => console.log('Audio play failed:', err))
     }
+  }
+
+  const handleVolumeChange = (e) => {
+    const newVolume = parseFloat(e.target.value)
+    setMusicVolume(newVolume)
+    if (audioRef.current) {
+      audioRef.current.volume = newVolume
+    }
+  }
+
+  const toggleMute = () => {
+    if (audioRef.current) {
+      audioRef.current.muted = !isMuted
+      setIsMuted(!isMuted)
+    }
+  }
+
+  // ✅ Get masonry pattern (like ClientGallery)
+  const getMasonryClass = (index) => {
+    const patterns = [
+      'row-span-2', 
+      'col-span-2', 
+      'row-span-2 col-span-2', 
+      '', 
+      '', 
+      'row-span-2', 
+      '', 
+      'col-span-2'
+    ]
+    return patterns[index % patterns.length]
   }
 
   const displayedPhotos = getDisplayedPhotos()
 
-  // ==================== LOADING STATE ====================
+  // LOADING STATE
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900">
-        <div className="text-center">
-          <div className="inline-block animate-spin rounded-full h-16 w-16 border-t-2 border-white mb-4"></div>
-          <p className="text-white text-2xl font-semibold">📸 Loading your gallery...</p>
-          <p className="text-white/60 mt-2">✨ Powered by AI Face Recognition</p>
-        </div>
+      <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-900">
+        <motion.div
+          initial={{ opacity: 0, scale: 0.8 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="text-center"
+        >
+          <div className="relative w-32 h-32 mx-auto mb-8">
+            <div className="absolute inset-0 border-8 border-white/20 rounded-full"></div>
+            <div className="absolute inset-0 border-8 border-t-white border-r-transparent border-b-transparent border-l-transparent rounded-full animate-spin"></div>
+            <FaImages className="absolute inset-0 m-auto text-4xl text-white" />
+          </div>
+          
+          <h2 className="text-3xl font-bold text-white mb-2">
+            📸 Loading your gallery...
+          </h2>
+          <p className="text-white/60 text-lg">
+            ✨ Powered by AI Face Recognition
+          </p>
+        </motion.div>
       </div>
     )
   }
 
-  // ==================== MAIN RENDER ====================
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900">
+    <div className="min-h-screen bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-900">
       {/* HEADER */}
       <div className="bg-black/30 backdrop-blur-md sticky top-0 z-40 border-b border-white/10">
         <div className="max-w-7xl mx-auto px-4 py-4">
           <div className="flex items-center justify-between flex-wrap gap-4">
-            {/* Welcome */}
             <div>
               <h1 className="text-2xl font-bold text-white flex items-center gap-2">
                 <FaUser className="text-purple-400" />
                 Welcome, {guestData?.name}! 👋
               </h1>
               <p className="text-white/60 text-sm mt-1">
-                Event: {eventId} • {photos.length} photos total
+                {photos.length} photos total
                 {aiMatchedPhotos.length > 0 && (
                   <span className="text-green-400 ml-2">
                     • {aiMatchedPhotos.length} matched for you ✨
@@ -337,7 +506,6 @@ const GuestGallery = () => {
               </p>
             </div>
 
-            {/* Actions */}
             <div className="flex items-center gap-3">
               {selectedPhotos.length > 0 && (
                 <button
@@ -361,7 +529,6 @@ const GuestGallery = () => {
 
           {/* Controls */}
           <div className="flex items-center justify-between gap-4 mt-4 flex-wrap">
-            {/* Search */}
             <div className="flex-1 min-w-[200px]">
               <div className="relative">
                 <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-white/40" />
@@ -375,22 +542,20 @@ const GuestGallery = () => {
               </div>
             </div>
 
-            {/* AI Filter */}
             {aiMatchedPhotos.length > 0 && (
               <button
                 onClick={() => setShowAiOnly(!showAiOnly)}
                 className={`px-4 py-2 rounded-lg font-semibold transition-all flex items-center gap-2 ${
                   showAiOnly
-                    ? 'bg-green-500 text-white'
+                    ? 'bg-green-500 text-white shadow-lg'
                     : 'bg-white/10 text-white border border-white/20'
                 }`}
               >
                 <FaRobot />
-                {showAiOnly ? `My Photos (${aiMatchedPhotos.length})` : 'All Photos'}
+                {showAiOnly ? `My Photos (${aiMatchedPhotos.length})` : 'Show All'}
               </button>
             )}
 
-            {/* View Mode */}
             <div className="flex gap-2">
               <button
                 onClick={() => setViewMode('masonry')}
@@ -410,16 +575,14 @@ const GuestGallery = () => {
               </button>
             </div>
 
-            {/* Select All */}
             <button
               onClick={selectedPhotos.length === displayedPhotos.length ? deselectAllPhotos : selectAllPhotos}
-              className="px-4 py-2 bg-white/10 hover:bg-white/20 text-white rounded-lg font-semibold transition-all flex items-center gap-2"
+              className="px-4 py-2 bg-white/10 hover:bg-white/20 text-white rounded-lg font-semibold transition-all"
             >
-              <FaCheckCircle />
+              <FaCheckCircle className="inline mr-2" />
               {selectedPhotos.length === displayedPhotos.length ? 'Deselect All' : 'Select All'}
             </button>
 
-            {/* Slideshow */}
             <button
               onClick={startSlideshow}
               className="px-4 py-2 bg-purple-500 hover:bg-purple-600 text-white rounded-lg font-semibold transition-all flex items-center gap-2"
@@ -430,46 +593,52 @@ const GuestGallery = () => {
           </div>
         </div>
       </div>
+
       {/* PHOTO GRID */}
       <div className="max-w-7xl mx-auto px-4 py-8">
         {displayedPhotos.length === 0 ? (
           <div className="text-center py-20">
             <FaImages className="text-6xl text-white/20 mx-auto mb-4" />
-            <p className="text-white/60 text-xl">
+            <p className="text-white/60 text-xl mb-4">
               {showAiOnly
-                ? 'No photos matched your face. Try viewing all photos.'
+                ? 'No photos matched your face'
                 : searchQuery
-                ? 'No photos found matching your search.'
-                : 'No photos available.'}
+                ? 'No photos found'
+                : 'No photos available'}
             </p>
             {showAiOnly && (
               <button
                 onClick={() => setShowAiOnly(false)}
-                className="mt-4 px-6 py-3 bg-purple-500 hover:bg-purple-600 text-white rounded-lg font-semibold"
+                className="px-6 py-3 bg-purple-500 hover:bg-purple-600 text-white rounded-lg font-semibold"
               >
                 View All Photos
               </button>
             )}
           </div>
         ) : (
-          <div className={viewMode === 'masonry' ? 'columns-1 md:columns-2 lg:columns-3 gap-4' : 'grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4'}>
-            {displayedPhotos.map((photo) => (
+          <div className={
+            viewMode === 'masonry' 
+              ? 'grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 auto-rows-[200px]'
+              : 'grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4'
+          }>
+            {displayedPhotos.map((photo, index) => (
               <motion.div
                 key={photo.id}
                 initial={{ opacity: 0, scale: 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}
-                className={`relative group cursor-pointer ${viewMode === 'masonry' ? 'mb-4' : ''}`}
-                onClick={() => setSelectedPhoto(photo)}
+                transition={{ delay: index * 0.02 }}
+                className={`relative group cursor-pointer overflow-hidden rounded-lg ${
+                  viewMode === 'masonry' ? getMasonryClass(index) : ''
+                }`}
+                onClick={(e) => openLightbox(photo, e)}
               >
-                {/* Matched Badge */}
                 {photo.isMatched && (
                   <div className="absolute top-2 left-2 z-10 px-3 py-1 bg-green-500 text-white text-xs font-bold rounded-full flex items-center gap-1 shadow-lg">
                     <FaCheckCircle />
-                    You're Here!
+                    You!
                   </div>
                 )}
 
-                {/* Checkbox */}
                 <div
                   className="absolute top-2 right-2 z-10"
                   onClick={(e) => {
@@ -488,17 +657,23 @@ const GuestGallery = () => {
                   </div>
                 </div>
 
-                {/* Image */}
+                {/* ✅ FIXED: Use getImageUrl for thumbnails */}
                 <img
-                  src={photo.thumbnail}
+                  src={getImageUrl(photo, 'thumb')}
                   alt={photo.name}
-                  className="w-full rounded-lg shadow-lg group-hover:scale-105 transition-transform"
+                  className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
                   loading="lazy"
+                  onLoad={() => setImageLoaded(prev => ({ ...prev, [photo.id]: true }))}
                 />
 
-                {/* Hover Overlay */}
-                <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg flex items-center justify-center">
-                  <FaExpand className="text-white text-2xl" />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                  <div className="absolute bottom-3 left-3 right-3">
+                    <p className="text-white text-sm font-semibold truncate">{photo.name}</p>
+                  </div>
+                </div>
+
+                <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/40">
+                  <FaExpand className="text-white text-3xl" />
                 </div>
               </motion.div>
             ))}
@@ -506,9 +681,9 @@ const GuestGallery = () => {
         )}
       </div>
 
-      {/* ==================== PHOTO VIEWER MODAL ==================== */}
+      {/* LIGHTBOX MODAL */}
       <AnimatePresence>
-        {selectedPhoto && (
+        {selectedPhoto && !isSlideshow && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -523,14 +698,36 @@ const GuestGallery = () => {
               <FaTimes className="text-2xl" />
             </button>
 
+            <button
+              onClick={(e) => {
+                e.stopPropagation()
+                prevPhoto()
+              }}
+              className="absolute left-4 top-1/2 -translate-y-1/2 p-4 bg-white/10 hover:bg-white/20 rounded-full text-white transition-all"
+            >
+              <FaChevronLeft className="text-2xl" />
+            </button>
+
+            <button
+              onClick={(e) => {
+                e.stopPropagation()
+                nextPhoto()
+              }}
+              className="absolute right-4 top-1/2 -translate-y-1/2 p-4 bg-white/10 hover:bg-white/20 rounded-full text-white transition-all"
+            >
+              <FaChevronRight className="text-2xl" />
+            </button>
+
             <div
               className="relative max-w-6xl w-full"
               onClick={(e) => e.stopPropagation()}
             >
               <motion.img
-                initial={{ scale: 0.8 }}
-                animate={{ scale: 1 }}
-                src={selectedPhoto.url}
+                key={selectedPhoto.id}
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: imageTransitioning ? 0 : 1, scale: imageTransitioning ? 0.9 : 1 }}
+                transition={{ duration: 0.2 }}
+                src={getImageUrl(selectedPhoto, 'hd')}
                 alt={selectedPhoto.name}
                 className="w-full h-auto max-h-[85vh] object-contain rounded-lg"
               />
@@ -544,16 +741,8 @@ const GuestGallery = () => {
 
               <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-3">
                 <button
-                  onClick={() => {
-                    const link = document.createElement('a')
-                    link.href = selectedPhoto.url
-                    link.download = selectedPhoto.name
-                    link.target = '_blank'
-                    document.body.appendChild(link)
-                    link.click()
-                    document.body.removeChild(link)
-                  }}
-                  className="px-6 py-3 bg-green-500 hover:bg-green-600 text-white rounded-lg font-semibold flex items-center gap-2 transition-all"
+                  onClick={() => window.open(getImageUrl(selectedPhoto, 'full'), '_blank')}
+                  className="px-6 py-3 bg-green-500 hover:bg-green-600 text-white rounded-lg font-semibold flex items-center gap-2"
                 >
                   <FaDownload />
                   Download
@@ -561,7 +750,7 @@ const GuestGallery = () => {
 
                 <button
                   onClick={() => togglePhotoSelection(selectedPhoto.id)}
-                  className={`px-6 py-3 rounded-lg font-semibold flex items-center gap-2 transition-all ${
+                  className={`px-6 py-3 rounded-lg font-semibold flex items-center gap-2 ${
                     selectedPhotos.includes(selectedPhoto.id)
                       ? 'bg-purple-500 text-white'
                       : 'bg-white/10 text-white'
@@ -570,13 +759,25 @@ const GuestGallery = () => {
                   <FaHeart />
                   {selectedPhotos.includes(selectedPhoto.id) ? 'Selected' : 'Select'}
                 </button>
+
+                <button
+                  onClick={startSlideshow}
+                  className="px-6 py-3 bg-purple-500 hover:bg-purple-600 text-white rounded-lg font-semibold flex items-center gap-2"
+                >
+                  <FaPlay />
+                  Slideshow
+                </button>
+              </div>
+
+              <div className="absolute top-4 left-1/2 -translate-x-1/2 px-4 py-2 bg-black/50 text-white rounded-full text-sm backdrop-blur-sm">
+                {currentImageIndex + 1} / {displayedPhotos.length}
               </div>
             </div>
           </motion.div>
         )}
       </AnimatePresence>
 
-      {/* ==================== SLIDESHOW MODAL ==================== */}
+      {/* SLIDESHOW MODAL */}
       <AnimatePresence>
         {isSlideshow && (
           <motion.div
@@ -585,7 +786,6 @@ const GuestGallery = () => {
             exit={{ opacity: 0 }}
             className="fixed inset-0 bg-black z-50 flex items-center justify-center"
           >
-            {/* Close Button */}
             <button
               onClick={stopSlideshow}
               className="absolute top-4 right-4 p-3 bg-white/10 hover:bg-white/20 rounded-full text-white transition-all z-10"
@@ -593,13 +793,12 @@ const GuestGallery = () => {
               <FaTimes className="text-2xl" />
             </button>
 
-            {/* Controls */}
             <div className="absolute top-4 left-4 flex gap-2 z-10">
               <button
-                onClick={toggleSlideshowPlayPause}
+                onClick={() => setIsSlideshow(!isSlideshow)}
                 className="p-3 bg-white/10 hover:bg-white/20 rounded-full text-white transition-all"
               >
-                {slideshowIntervalRef.current ? <FaPause /> : <FaPlay />}
+                {slideshowInterval.current ? <FaPause /> : <FaPlay />}
               </button>
 
               <button
@@ -611,106 +810,65 @@ const GuestGallery = () => {
 
               <select
                 value={slideshowSpeed}
-                onChange={(e) => {
-                  setSlideshowSpeed(Number(e.target.value))
-                  if (slideshowIntervalRef.current) {
-                    clearInterval(slideshowIntervalRef.current)
-                    slideshowIntervalRef.current = setInterval(() => {
-                      setSlideshowIndex(prev => {
-                        const displayedPhotos = getDisplayedPhotos()
-                        return (prev + 1) % displayedPhotos.length
-                      })
-                    }, Number(e.target.value))
-                  }
-                }}
-                className="px-4 py-2 bg-white/10 text-white rounded-lg"
+                onChange={(e) => setSlideshowSpeed(Number(e.target.value))}
+                className="px-4 py-2 bg-white/10 text-white rounded-lg border-none outline-none"
               >
-                <option value="2000">Fast (2s)</option>
-                <option value="3000">Normal (3s)</option>
-                <option value="5000">Slow (5s)</option>
+                <option value="2000" className="bg-gray-900">Fast (2s)</option>
+                <option value="3000" className="bg-gray-900">Normal (3s)</option>
+                <option value="5000" className="bg-gray-900">Slow (5s)</option>
               </select>
             </div>
 
-            {/* Navigation Arrows */}
             <button
-              onClick={prevSlide}
+              onClick={prevPhoto}
               className="absolute left-4 top-1/2 -translate-y-1/2 p-4 bg-white/10 hover:bg-white/20 rounded-full text-white transition-all"
             >
               <FaChevronLeft className="text-2xl" />
             </button>
 
             <button
-              onClick={nextSlide}
+              onClick={nextPhoto}
               className="absolute right-4 top-1/2 -translate-y-1/2 p-4 bg-white/10 hover:bg-white/20 rounded-full text-white transition-all"
             >
               <FaChevronRight className="text-2xl" />
             </button>
 
-            {/* Image */}
-            <motion.div
-              key={slideshowIndex}
-              initial={{ opacity: 0, scale: 0.8 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.8 }}
-              transition={{ duration: 0.5 }}
-              className="relative max-w-6xl w-full px-20"
-            >
-              <img
-                src={displayedPhotos[slideshowIndex]?.url}
-                alt={displayedPhotos[slideshowIndex]?.name}
-                className="w-full h-auto max-h-[90vh] object-contain"
-              />
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={currentImageIndex}
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.8 }}
+                transition={{ duration: 0.5 }}
+                className="relative max-w-6xl w-full px-20"
+              >
+                <img
+                  src={getImageUrl(displayedPhotos[currentImageIndex], 'hd')}
+                  alt={displayedPhotos[currentImageIndex]?.name}
+                  className="w-full h-auto max-h-[90vh] object-contain rounded-lg shadow-2xl"
+                />
 
-              {displayedPhotos[slideshowIndex]?.isMatched && (
-                <div className="absolute top-4 left-4 px-4 py-2 bg-green-500 text-white font-bold rounded-full flex items-center gap-2">
-                  <FaCheckCircle />
-                  You're Here!
+                {displayedPhotos[currentImageIndex]?.isMatched && (
+                  <div className="absolute top-4 left-4 px-4 py-2 bg-green-500 text-white font-bold rounded-full flex items-center gap-2 shadow-lg">
+                    <FaCheckCircle />
+                    You're Here!
+                  </div>
+                )}
+
+                <div className="absolute bottom-4 left-1/2 -translate-x-1/2 px-6 py-3 bg-black/50 text-white rounded-full backdrop-blur-sm">
+                  {currentImageIndex + 1} / {displayedPhotos.length}
                 </div>
-              )}
+              </motion.div>
+            </AnimatePresence>
 
-              {/* Counter */}
-              <div className="absolute bottom-4 left-1/2 -translate-x-1/2 px-4 py-2 bg-black/50 text-white rounded-full">
-                {slideshowIndex + 1} / {displayedPhotos.length}
-              </div>
-            </motion.div>
-
-            {/* Hidden Audio Element */}
-            <audio
-              ref={audioRef}
-              src="https://www.bensound.com/bensound-music/bensound-memories.mp3"
-              loop
-            />
+            <div className="absolute bottom-4 left-4 text-white/60 text-sm">
+              ← → Navigate • SPACE Play/Pause • M Music • ESC Close
+            </div>
           </motion.div>
         )}
       </AnimatePresence>
 
-      {/* ==================== FLOATING ACTION BUTTONS ==================== */}
-      <div className="fixed bottom-8 right-8 flex flex-col gap-3 z-30">
-        {selectedPhotos.length > 0 && (
-          <motion.button
-            initial={{ scale: 0 }}
-            animate={{ scale: 1 }}
-            onClick={downloadSelectedPhotos}
-            className="p-4 bg-green-500 hover:bg-green-600 text-white rounded-full shadow-lg transition-all relative"
-            title="Download Selected"
-          >
-            <FaCloudDownloadAlt className="text-2xl" />
-            <span className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 rounded-full flex items-center justify-center text-xs font-bold">
-              {selectedPhotos.length}
-            </span>
-          </motion.button>
-        )}
-
-        <button
-          onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-          className="p-4 bg-purple-500 hover:bg-purple-600 text-white rounded-full shadow-lg transition-all"
-          title="Back to Top"
-        >
-          <FaArrowLeft className="text-2xl rotate-90" />
-        </button>
-      </div>
-
-      {/* ==================== STATS BANNER ==================== */}
+      {/* FLOATING STATS */}
       {displayedPhotos.length > 0 && (
         <div className="fixed bottom-8 left-8 bg-black/50 backdrop-blur-md px-6 py-3 rounded-full text-white z-30">
           <div className="flex items-center gap-4 text-sm">
@@ -732,6 +890,21 @@ const GuestGallery = () => {
             )}
           </div>
         </div>
+      )}
+
+      {/* FLOATING DOWNLOAD BUTTON */}
+      {selectedPhotos.length > 0 && (
+        <motion.button
+          initial={{ scale: 0 }}
+          animate={{ scale: 1 }}
+          onClick={downloadSelectedPhotos}
+          className="fixed bottom-8 right-8 p-4 bg-green-500 hover:bg-green-600 text-white rounded-full shadow-2xl transition-all z-30 relative"
+        >
+          <FaCloudDownloadAlt className="text-2xl" />
+          <span className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 rounded-full flex items-center justify-center text-xs font-bold">
+            {selectedPhotos.length}
+          </span>
+        </motion.button>
       )}
     </div>
   )
