@@ -37,7 +37,7 @@ const GuestRegistration = () => {
   const [loading, setLoading] = useState(false)
   const [matchedPhotos, setMatchedPhotos] = useState([])
 
-  const GAS_URL = 'https://script.google.com/macros/s/AKfycbz9zCggAIoiuDer8YWLO89mlDFDFUEi4HAyMlDuJjML442wV3vA4I4r_g7yclz6Ix93LA/exec'
+  const GAS_URL = 'https://script.google.com/macros/s/AKfycbx2hS9aqJ9Mp9RIF52Yw2g7SeAv2nisSYRMXpvu9RFf3QXquD-8QgRVtLOj-vvK9Ibzzg/exec'
 
   // ✅ CHECK EXISTING SESSION ON MOUNT
   useEffect(() => {

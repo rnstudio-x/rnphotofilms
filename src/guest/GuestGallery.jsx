@@ -44,20 +44,34 @@ const GuestGallery = () => {
   const imageCache = useRef({})
   const audioRef = useRef(null)
 
-  const GAS_URL = 'https://script.google.com/macros/s/AKfycbz9zCggAIoiuDer8YWLO89mlDFDFUEi4HAyMlDuJjML442wV3vA4I4r_g7yclz6Ix93LA/exec'
+  const GAS_URL = 'https://script.google.com/macros/s/AKfycbx2hS9aqJ9Mp9RIF52Yw2g7SeAv2nisSYRMXpvu9RFf3QXquD-8QgRVtLOj-vvK9Ibzzg/exec'
   const MUSIC_FILE = 'https://cdn.pixabay.com/audio/2021/11/23/audio_64b2dd1bce.mp3'
 
   // ✅ NEW: Get optimized image URLs (like ClientGallery)
   const getImageUrl = (photo, quality = 'hd') => {
-    const sizes = {
-      thumb: 'w400',
-      preview: 'w800',
-      hd: 'w1600',
-      full: 'w2048'
-    }
-    return `https://drive.google.com/thumbnail?id=${photo.id}&sz=${sizes[quality]}`
+  if (!photo || !photo.id) {
+    console.warn('Invalid photo object:', photo)
+    return 'https://via.placeholder.com/400?text=Image+Not+Found'
   }
-
+  
+  const sizes = {
+    thumb: 'w400',
+    preview: 'w800',
+    hd: 'w1600',
+    full: 'w2048'
+  }
+  
+  // ✅ Use Drive's built-in thumbnail service
+  const url = `https://drive.google.com/thumbnail?id=${photo.id}&sz=${sizes[quality]}`
+  
+  return url
+}
+// ✅ Add error handling for image loading
+const handleImageError = (e, photo) => {
+  console.error('Image load failed:', photo.id, photo.name)
+  e.target.src = 'https://via.placeholder.com/400?text=Image+Error'
+  e.target.onerror = null // Prevent infinite loop
+}
   // ✅ NEW: Preload next images for smooth slideshow
   const preloadImages = (startIndex) => {
     const displayedPhotos = getDisplayedPhotos()
@@ -659,12 +673,13 @@ const GuestGallery = () => {
 
                 {/* ✅ FIXED: Use getImageUrl for thumbnails */}
                 <img
-                  src={getImageUrl(photo, 'thumb')}
-                  alt={photo.name}
-                  className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
-                  loading="lazy"
-                  onLoad={() => setImageLoaded(prev => ({ ...prev, [photo.id]: true }))}
-                />
+                    src={getImageUrl(photo, 'thumb')}
+                    alt={photo.name}
+                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+                    loading="lazy"
+                    onLoad={() => setImageLoaded(prev => ({ ...prev, [photo.id]: true }))}
+                    onError={(e) => handleImageError(e, photo)}
+                  />
 
                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                   <div className="absolute bottom-3 left-3 right-3">
