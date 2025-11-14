@@ -48,24 +48,21 @@ const GuestGallery = () => {
   const MUSIC_FILE = 'https://cdn.pixabay.com/audio/2021/11/23/audio_64b2dd1bce.mp3'
 
   // ✅ NEW: Get optimized image URLs (like ClientGallery)
-  const getImageUrl = (photo, quality = 'hd') => {
-  if (!photo || !photo.id) {
-    console.warn('Invalid photo object:', photo)
-    return 'https://via.placeholder.com/400?text=Image+Not+Found'
+    const getImageUrl = (photo, quality = 'hd') => {
+    if (!photo || !photo.id) {
+      console.warn('⚠️ Invalid photo:', photo)
+      return 'https://via.placeholder.com/400?text=Image+Not+Found'
+    }
+    
+    const sizes = {
+      thumb: 'w400',
+      preview: 'w800',
+      hd: 'w1600',
+      full: 'w2048'
+    }
+    
+    return `https://drive.google.com/thumbnail?id=${photo.id}&sz=${sizes[quality]}`
   }
-  
-  const sizes = {
-    thumb: 'w400',
-    preview: 'w800',
-    hd: 'w1600',
-    full: 'w2048'
-  }
-  
-  // ✅ Use Drive's built-in thumbnail service
-  const url = `https://drive.google.com/thumbnail?id=${photo.id}&sz=${sizes[quality]}`
-  
-  return url
-}
 // ✅ Add error handling for image loading
 const handleImageError = (e, photo) => {
   console.error('Image load failed:', photo.id, photo.name)
@@ -457,19 +454,20 @@ const handleImageError = (e, photo) => {
   }
 
   // ✅ Get masonry pattern (like ClientGallery)
-  const getMasonryClass = (index) => {
-    const patterns = [
-      'row-span-2', 
-      'col-span-2', 
-      'row-span-2 col-span-2', 
-      '', 
-      '', 
-      'row-span-2', 
-      '', 
-      'col-span-2'
-    ]
-    return patterns[index % patterns.length]
-  }
+// ✅ ADD THIS IF USING MASONRY VIEW
+const getMasonryClass = (index) => {
+  const patterns = [
+    'row-span-2', 
+    'col-span-2', 
+    'row-span-2 col-span-2', 
+    '', 
+    '', 
+    'row-span-2', 
+    '', 
+    'col-span-2'
+  ]
+  return patterns[index % patterns.length]
+}
 
   const displayedPhotos = getDisplayedPhotos()
 
@@ -632,7 +630,7 @@ const handleImageError = (e, photo) => {
         ) : (
           <div className={
             viewMode === 'masonry' 
-              ? 'grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 auto-rows-[200px]'
+             ? 'grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 auto-rows-[200px]'
               : 'grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4'
           }>
             {displayedPhotos.map((photo, index) => (
