@@ -17,22 +17,39 @@ const Portfolio = () => {
     }
   }, [isInView, controls])
 
-  const categories = ['All', 'Weddings', 'Pre-Weddings', 'Events', 'Maternity', 'Corporate', 'Fashion']
+  const categories = ['All', 'Weddings', 'Pre-Weddings', 'Events', 'Maternity', 'Outdoor-Shoot', 'Corporate', 'Fashion']
 
   // Sample portfolio images (replace with your actual images)
   const portfolioItems = [
-    { id: 1, category: 'Weddings', image: 'https://images.unsplash.com/photo-1519741497674-611481863552?w=600', title: 'Wedding Ceremony' },
-    { id: 2, category: 'Pre-Weddings', image: 'https://images.unsplash.com/photo-1583939003579-730e3918a45a?w=600', title: 'Love Story' },
-    { id: 3, category: 'Events', image: 'https://images.unsplash.com/photo-1464366400600-7168b8af9bc3?w=600', title: 'Corporate Event' },
-    { id: 4, category: 'Maternity', image: 'https://images.unsplash.com/photo-1551963831-b3b1ca40c98e?w=600', title: 'Maternity Shoot' },
-    { id: 5, category: 'Corporate', image: 'https://images.unsplash.com/photo-1511578314322-379afb476865?w=600', title: 'Business Portrait' },
-    { id: 6, category: 'Fashion', image: 'https://images.unsplash.com/photo-1529139574466-a303027c1d8b?w=600', title: 'Fashion Editorial' },
-    { id: 7, category: 'Weddings', image: 'https://images.unsplash.com/photo-1606800052052-a08af7148866?w=600', title: 'Bride Portrait' },
-    { id: 8, category: 'Pre-Weddings', image: 'https://images.unsplash.com/photo-1522673607200-164d1b6ce486?w=600', title: 'Couple Shoot' },
-    { id: 9, category: 'Events', image: 'https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=600', title: 'Party Photography' },
-    { id: 10, category: 'Weddings', image: 'https://images.unsplash.com/photo-1591604466107-ec97de577aff?w=600', title: 'Reception' },
-    { id: 11, category: 'Fashion', image: 'https://images.unsplash.com/photo-1558769132-cb1aea398f70?w=600', title: 'Model Portfolio' },
-    { id: 12, category: 'Corporate', image: 'https://images.unsplash.com/photo-1556761175-b413da4baf72?w=600', title: 'Team Photo' },
+    { id: 1, category: 'Weddings', image: '/rnphotofilms/images/gallery/w1.JPG?w=600', title: 'Wedding Ceremony' },
+    { id: 2, category: 'Weddings', image: '/rnphotofilms/images/insta/11.jpg?w=600', title: 'Love Story' },
+    { id: 3, category: 'Weddings', image: '/rnphotofilms/images/gallery/w3.jpg?w=600', title: 'Corporate Event' },
+    { id: 4, category: 'Weddings', image: '/rnphotofilms/images/gallery/w4.jpg?w=600', title: 'Maternity Shoot' },
+    { id: 5, category: 'Weddings', image: '/rnphotofilms/images/gallery/w5.jpg?w=600', title: 'Business Portrait' },
+    { id: 6, category: 'Weddings', image: '/rnphotofilms/images/insta/3.jpg?w=600', title: 'Fashion Editorial' },
+    { id: 7, category: 'Weddings', image: '/rnphotofilms/images/insta/9.jpg?w=600', title: 'Bride Portrait' },
+    { id: 8, category: 'Weddings', image: '/rnphotofilms/images/gallery/wedding.jpg?w=600', title: 'Couple Shoot' },
+    { id: 9, category: 'Pre-Weddings', image: '/rnphotofilms/images/gallery/1p.jpg?w=600', title: 'Party Photography' },
+    { id: 10, category: 'Pre-Weddings', image: '/rnphotofilms/images/gallery/p2.jpg?w=600', title: 'Reception' },
+    { id: 11, category: 'Pre-Weddings', image: '/rnphotofilms/images/gallery/p3.JPG?w=600', title: 'Model Portfolio' },
+    { id: 12, category: 'Pre-Weddings', image: '/rnphotofilms/images/gallery/p4.png?w=600', title: 'Team Photo' },
+    { id: 13, category: 'Pre-Weddings', image: '/rnphotofilms/images/gallery/p5.jpg?w=600', title: 'Maternity Shoot' },
+    { id: 14, category: 'Pre-Weddings', image: '/rnphotofilms/images/gallery/p6.jpg?w=600', title: 'Business Portrait' },
+    { id: 15, category: 'Pre-Weddings', image: '/rnphotofilms/images/gallery/p7.jpg?w=600', title: 'Fashion Editorial' },
+    { id: 16, category: 'Outdoor-Shoot', image: '/rnphotofilms/images/gallery/o1.png?w=600', title: 'Bride Portrait' },
+    { id: 17, category: 'Outdoor-Shoot', image: '/rnphotofilms/images/gallery/o2.jpg?w=600', title: 'Couple Shoot' },
+    { id: 18, category: 'Outdoor-Shoot', image: '/rnphotofilms/images/gallery/o3.png?w=600', title: 'Party Photography' },
+    { id: 19, category: 'Outdoor-Shoot', image: '/rnphotofilms/images/gallery/o4.jpg?w=600', title: 'Reception' },
+    { id: 20, category: 'Events', image: '/rnphotofilms/images/insta/5.jpg?w=600', title: 'Model Portfolio' },
+    { id: 21, category: 'Corporate', image: '/rnphotofilms/images/gallery/8.jpg?w=600', title: 'Team Photo' },
+    { id: 22, category: 'Maternity', image: '/rnphotofilms/images/gallery/m2.jpg?w=600', title: 'Model Portfolio' },
+    { id: 23, category: 'Corporate', image: '/rnphotofilms/images/insta/6.jpg?w=600', title: 'Team Photo' },
+    { id: 24, category: 'Weddings', image: '/rnphotofilms/images/insta/12.jpg?w=600', title: 'Wedding Ceremony' },
+    { id: 25, category: 'Weddings', image: '/rnphotofilms/images/gallery/w7.jpg?w=600', title: 'Love Story' },
+    { id: 26, category: 'Weddings', image: '/rnphotofilms/images/gallery/w2.JPG?w=600', title: 'Corporate Event' },
+    { id: 27, category: 'Maternity', image: '/rnphotofilms/images/gallery/m1.jpg?w=600', title: 'Maternity Shoot' },
+    { id: 28, category: 'Weddings', image: '/rnphotofilms/images/gallery/w6.jpg?w=600', title: 'Business Portrait' },
+    { id: 29, category: 'Events', image: '/rnphotofilms/images/gallery/event.jpg?w=600', title: 'Fashion Editorial' },
   ]
 
   // Filter items based on active category

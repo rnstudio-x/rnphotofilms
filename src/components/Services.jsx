@@ -50,7 +50,7 @@ const Services = () => {
       title: 'Wedding Photography',
       tagline: 'Your Love Story, Forever Captured',
       description: 'Cinematic wedding coverage that tells your unique love story',
-      image: 'https://images.unsplash.com/photo-1519741497674-611481863552?w=800',
+      image: '/rnphotofilms/images/gallery/w3.jpg?w=800',
       gradient: 'from-pink-500 via-rose-500 to-red-500',
       bgColor: 'bg-pink-50',
       packages: [
@@ -109,7 +109,7 @@ const Services = () => {
       title: 'Pre-Wedding Shoot',
       tagline: 'Before The Big Day Magic',
       description: 'Romantic outdoor sessions capturing your chemistry',
-      image: 'https://images.unsplash.com/photo-1583939003579-730e3918a45a?w=800',
+      image: '/rnphotofilms/images/gallery/1p.jpg?w=600',
       gradient: 'from-purple-500 via-pink-500 to-rose-500',
       bgColor: 'bg-purple-50',
       packages: [
@@ -215,7 +215,7 @@ const Services = () => {
       title: 'Maternity & Newborn',
       tagline: 'Celebrating New Beginnings',
       description: 'Gentle photography celebrating motherhood & baby\'s first moments',
-      image: 'https://images.unsplash.com/photo-1551963831-b3b1ca40c98e?w=800',
+      image: '/rnphotofilms/images/gallery/m2.jpg?w=800',
       gradient: 'from-amber-400 via-yellow-500 to-orange-500',
       bgColor: 'bg-amber-50',
       packages: [

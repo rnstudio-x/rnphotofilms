@@ -3,16 +3,20 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { FaInstagram, FaHeart } from 'react-icons/fa'
 
 const demoPosts = [
-  { id: 1, image: 'https://images.unsplash.com/photo-1465495976277-4387d4b0b4c6?w=400', likes: 234 },
-  { id: 2, image: 'https://images.unsplash.com/photo-1519741497674-611481863552?w=400', likes: 456 },
-  { id: 3, image: 'https://images.unsplash.com/photo-1606216794074-735e91aa2c92?w=400', likes: 678 },
-  { id: 4, image: 'https://images.unsplash.com/photo-1583939003579-730e3918a45a?w=400', likes: 345 },
-  { id: 5, image: 'https://images.unsplash.com/photo-1591604466107-ec97de577aff?w=400', likes: 567 },
-  { id: 6, image: 'https://images.unsplash.com/photo-1522673607200-164d1b6ce486?w=400', likes: 789 },
-  { id: 7, image: 'https://images.unsplash.com/photo-1464366400600-7168b8af9bc3?w=400', likes: 412 },
-  { id: 8, image: 'https://images.unsplash.com/photo-1551963831-b3b1ca40c98e?w=400', likes: 382 },
-  { id: 9, image: 'https://images.unsplash.com/photo-1511578314322-379afb476865?w=400', likes: 592 },
+  { id: 1, image: '/rnphotofilms/images/insta/12.jpg?w=600', likes: 234 },
+  { id: 2, image: '/rnphotofilms/images/insta/11.jpg?w=600', likes: 456 },
+  { id: 3, image: '/rnphotofilms/images/insta/4.jpg?w=600', likes: 678 },
+  { id: 4, image: '/rnphotofilms/images/insta/9.jpg?w=600', likes: 345 },
+  { id: 5, image: '/rnphotofilms/images/insta/3.jpg?w=600', likes: 567 },
+  { id: 6, image: '/rnphotofilms/images/insta/7.jpg?w=600', likes: 789 },
+  { id: 7, image: '/rnphotofilms/images/insta/6.jpg?w=600', likes: 412 },
+  { id: 8, image: '/rnphotofilms/images/insta/5.jpg?w=600', likes: 382 },
+  { id: 9, image: '/rnphotofilms/images/insta/10.jpg?w=600', likes: 592 },
+  { id: 10, image: '/rnphotofilms/images/insta/8.jpg?w=600', likes: 412 },
+  { id: 11, image: '/rnphotofilms/images/insta/2.jpg?w=600', likes: 382 },
+  { id: 12, image: '/rnphotofilms/images/insta/1.jpg?w=600', likes: 592 },
 ]
+
 
 const AnimatedMosaicInstagram = ({ posts }) => {
   const feed = Array.isArray(posts) && posts.length ? posts : demoPosts
@@ -73,14 +77,19 @@ const AnimatedMosaicInstagram = ({ posts }) => {
               style={{ minWidth: 240 }}
             >
               <motion.div
-                className="relative overflow-hidden w-full rounded-3xl shadow-xl border-4 border-gold cursor-pointer"
-                style={{ aspectRatio: '1/1.18', background: '#4442' }}
+                className="relative overflow-hidden w-full rounded-3xl shadow-xl border-4 border-gold cursor-pointer bg-gray-200"
+                style={{ aspectRatio: '1/1.18' }}
                 whileHover={{ scale: 1.03 }}
                 onMouseEnter={() => setAutoplay(false)}
                 onMouseLeave={() => setAutoplay(true)}
                 onClick={() => window.open('https://www.instagram.com/rn.photo.films/', '_blank')}
               >
-                <img src={feed[highlight]?.image} alt="Insta highlight" className="w-full h-full object-cover" loading="lazy" />
+                <img 
+                  src={feed[highlight]?.image} 
+                  alt="Insta highlight" 
+                  className="w-full h-full object-cover" 
+                  loading="eager"
+                />
                 <motion.div
                   className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-5 text-lg font-bold text-white flex items-center gap-4"
                   animate={{
@@ -104,6 +113,7 @@ const AnimatedMosaicInstagram = ({ posts }) => {
               </div>
             </motion.div>
           </AnimatePresence>
+
 
           {/* Grid Masonry */}
           <div className="flex-1 grid grid-cols-2 md:grid-cols-4 gap-5">

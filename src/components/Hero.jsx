@@ -10,27 +10,32 @@ const TypewriterMorphHero = () => {
   const categories = [
     { 
       name: 'Weddings',
-      image: 'https://images.unsplash.com/photo-1519741497674-611481863552?w=1920',
+      image: '/rnphotofilms/images/hero/4.jpg',
+      href: '#portfolio'
+    },
+    { 
+      name: 'Pre-Weddings',
+      image: '/rnphotofilms/images/hero/1a.jpg',
       href: '#portfolio'
     },
     { 
       name: 'Events',
-      image: 'https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=1920',
+      image: '/rnphotofilms/images/hero/2.jpg',
       href: '#portfolio'
     },
     { 
       name: 'Love Stories',
-      image: 'https://images.unsplash.com/photo-1583939003579-730e3918a45a?w=1920',
+      image: '/rnphotofilms/images/hero/5.jpg',
       href: '#portfolio'
     },
     { 
       name: 'Maternity',
-      image: 'https://images.unsplash.com/photo-1551963831-b3b1ca40c98e?w=1920',
+      image: '/rnphotofilms/images/hero/6.jpg',
       href: '#portfolio'
     },
     { 
       name: 'Memories',
-      image: 'https://images.unsplash.com/photo-1606216794074-735e91aa2c92?w=1920',
+      image: '/rnphotofilms/images/hero/1.jpg',
       href: '#portfolio'
     },
   ]
